@@ -45,9 +45,9 @@ def create_network(img_size, output_channels, filters=64):
 
 
 
-
+'''
 class DataGenerator(Sequence):
     
     def __init__(self, list_IDs, labels, batch_size=8, dim=(32,32,32), n_channels=1, n_classes=10, shuffle=True):
-        
+'''     
     
