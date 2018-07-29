@@ -1,53 +1,81 @@
 # WHISKER SEGMENTATION
 '''
-to do:
-use all images, and split training, test sets
-pick up training where left off
-checkpoint saving, training termination rules
-data generator?
-try with resnet50 on top
+to do - 
+*test with training, test set
+max instead of downsampling
+predict specific whiskers AND all whiskers
+checkpoint saving, training termination rules, and naming models with settings
+data generator
+way to plot loss and training like eddie
 '''
 
-from utils import create_network
+from utils import create_network, show_predictions
 from keras.optimizers import Adam
 import numpy as np
 import cv2
-import matplotlib.pyplot as plt
 import os.path
-from keras.applications.resnet50 import ResNet50
+import tensorflow as tf
+import keras.backend as K
+from sklearn.model_selection import train_test_split
 
 
-
-
-resnet50 = ResNet50(include_top=False, weights='imagenet', input_tensor=None, input_shape=None, pooling=None, classes=1000)
 
 # settings
-binary_labels = True
+test_size = .05
+use_cpu=True
+binary_labels = False
 lr_init = .001
 loss_fcn = 'binary_crossentropy' if binary_labels else 'mean_squared_error'
 batch_size = 32
-total_samples = 5000
-filters = 16
+total_samples = 1000
+training_epochs = 100
+filters = 32
 output_channels = 3
 data_dir = 'data\\frames'
 labels_dir = 'data\\labeled'
-img_dims = (548,640) # currently must be divisible by 4
+img_dims = (548,640)
+down_sampling = True
 dilation = 40
-gauss_blurring = 75 # needs to be odd number
+gauss_blurring = 50
 
 
-# load and augment data
+
+# initializations
+if down_sampling:
+    img_dims = [int(dim/2) for dim in img_dims]
+    dilation, gauss_blurring = int(dilation/2), int(gauss_blurring/2)
+    if dilation%2==0:
+        dilation += 1
+    if gauss_blurring%2==0:
+        gauss_blurring += 1
+img_dims = [dim-dim%4 for dim in img_dims] # ensure dimensions are divisble by 4    
+
 X = np.empty((total_samples, img_dims[0], img_dims[1], 1), dtype='float32')
 Y = np.empty((total_samples, img_dims[0], img_dims[1], output_channels),
              dtype='bool' if binary_labels else 'float32')
+
 dilation_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(dilation,dilation)) # used to thicken the whiskers up when using binary labels
 
+
+
+# load and augment data
 for i in range(total_samples):
-    X[i] = cv2.imread('%s\\img%i.png' % (data_dir, i+1))[0:img_dims[0], 0:img_dims[1], 1, None].astype('float32') / 255
-    print(i/total_samples)
+    
+    # load and resize raw image
+    img = cv2.imread('%s\\img%i.png' % (data_dir, i+1))[:, :, 1].astype('float32') / 255
+    img = cv2.resize(img, (img_dims[1], img_dims[0]))
+    img = img[:,:,None]
+    X[i]=img
+    
+    # load labels
     for j in range(output_channels):
         if os.path.isfile("%s\\frame%05d_whisker_C%i.png" % (labels_dir, i+1, j+1)):
-            img = cv2.imread("%s\\frame%05d_whisker_C%i.png" % (labels_dir, i+1, j+1))[0:img_dims[0], 0:img_dims[1], 1]
+            
+            # load and resize confidence map
+            img = cv2.imread("%s\\frame%05d_whisker_C%i.png" % (labels_dir, i+1, j+1))[:, :, 1]
+            img = cv2.resize(img, (img_dims[1], img_dims[0]))
+            
+            # modify confidence map
             if binary_labels:
                 img = cv2.dilate(img, dilation_kernel)
             else:
@@ -62,24 +90,29 @@ if not binary_labels:
     Y = Y / np.max(Y)
 
 
+# split into train and test sets
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=test_size)
+
+
+
+# compile model
 model = create_network(X[0].shape, output_channels, filters, optimizer=Adam(lr=lr_init), loss_fcn=loss_fcn)
-model.fit(X, Y, batch_size=batch_size, epochs=10, verbose=1)
+
+
+# train!
+if use_cpu:
+    config = tf.ConfigProto(device_count={'GPU':0})
+    sess = tf.Session(config=config)
+    K.set_session(sess)
+model.fit(X_train, Y_train, batch_size=batch_size, epochs=training_epochs, verbose=1, shuffle=True)
 
 
 
-
-
-
-# show prediction
-predictions = model.predict(X[1:10,])
-
-
-
-
-
-
-
-
+# generate and show predictions
+examples_to_show = 6
+inds = np.random.choice(range(X_test.shape[0]), size=examples_to_show, replace=False)
+predictions = model.predict(X_test[inds])
+show_predictions(X_test[inds], Y_test[inds], predictions)
 
 
 
