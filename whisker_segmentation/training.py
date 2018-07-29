@@ -14,8 +14,12 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 import os.path
+from keras.applications.resnet50 import ResNet50
 
 
+
+
+resnet50 = ResNet50(include_top=False, weights='imagenet', input_tensor=None, input_shape=None, pooling=None, classes=1000)
 
 # settings
 binary_labels = True
