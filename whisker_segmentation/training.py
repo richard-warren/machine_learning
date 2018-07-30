@@ -29,7 +29,7 @@ batch_size = 16
 total_samples = 1000
 training_epochs = 100
 filters = 16
-output_channels = 3
+output_channels = 4
 data_dir = 'data\\frames'
 labels_dir = 'data\\labeled'
 img_dims = (548,640)
@@ -69,10 +69,10 @@ for i in range(total_samples):
     
     # load labels
     for j in range(output_channels):
-        if os.path.isfile("%s\\frame%05d_whisker_C%i.png" % (labels_dir, i+1, j+1)):
+        if os.path.isfile("%s\\frame%05d_whisker_C%i.png" % (labels_dir, i+1, j)):
             
             # load and resize confidence map
-            img = cv2.imread("%s\\frame%05d_whisker_C%i.png" % (labels_dir, i+1, j+1))[:, :, 1]
+            img = cv2.imread("%s\\frame%05d_whisker_C%i.png" % (labels_dir, i+1, j))[:, :, 1]
             img = cv2.resize(img, (img_dims[1], img_dims[0]))
             
             # modify confidence map
