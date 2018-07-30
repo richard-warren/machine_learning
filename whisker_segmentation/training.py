@@ -1,11 +1,10 @@
 # WHISKER SEGMENTATION
 '''
-to do - 
-*test with training, test set
+TO DO:
+*data generator
 max instead of downsampling
 predict specific whiskers AND all whiskers
 checkpoint saving, training termination rules, and naming models with settings
-data generator
 way to plot loss and training like eddie
 '''
 
@@ -22,14 +21,14 @@ from sklearn.model_selection import train_test_split
 
 # settings
 test_size = .05
-use_cpu=True
+use_cpu = False
 binary_labels = False
 lr_init = .001
 loss_fcn = 'binary_crossentropy' if binary_labels else 'mean_squared_error'
-batch_size = 32
+batch_size = 16
 total_samples = 1000
 training_epochs = 100
-filters = 32
+filters = 16
 output_channels = 3
 data_dir = 'data\\frames'
 labels_dir = 'data\\labeled'
@@ -59,6 +58,7 @@ dilation_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(dilation,dilation
 
 
 # load and augment data
+print('loading data...')
 for i in range(total_samples):
     
     # load and resize raw image

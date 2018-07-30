@@ -51,14 +51,11 @@ def create_network(img_size, output_channels, filters=64, optimizer='adam', loss
 
 def show_predictions(X, Y, predictions):
     
-    examples = X.shape[0]
-    
-    # generate predictions
-    example_inds = np.random.choice(range(X.shape[0]), size=examples, replace=False)
+    examples_to_show = X.shape[0]
     
     # prepare figure
     plt.close('all')
-    fig, axes = plt.subplots(2, examples, sharex=True, sharey=True)
+    fig, axes = plt.subplots(2, examples_to_show, sharex=True, sharey=True)
     channels = Y.shape[-1]
     
     # prepare frames with solid colors
@@ -70,17 +67,16 @@ def show_predictions(X, Y, predictions):
             color_frames[:,:,color,channel] = rgb[color]
     
     
-    for col in range(examples):
+    for col in range(examples_to_show):
         
         # get raw image
-        ind = example_inds[col]
-        raw_img = X[ind][:,:,0]
+        raw_img = X[col][:,:,0]
         raw_img = np.repeat(raw_img[:,:,None], 3, axis=2) # add color dimension
         
         # show ground truth
         colored_labels = np.zeros(color_frames.shape, dtype='float32')
         for channel in range(channels):
-            temp = Y[ind,:,:,channel]
+            temp = Y[col,:,:,channel]
             temp= np.repeat(temp[:,:,None], 3, axis=2)
             colored_labels[:,:,:,channel] =  temp * color_frames[:,:,:,channel]
         colored_labels = np.amax(colored_labels, axis=3)
