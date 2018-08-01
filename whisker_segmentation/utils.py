@@ -8,7 +8,6 @@ import cv2
 
 
 
-
 def create_network(img_size, output_channels, filters=64, optimizer='adam', loss_fcn='mean_squared_error'):
     
     # create fully convolutional network
@@ -47,6 +46,16 @@ def create_network(img_size, output_channels, filters=64, optimizer='adam', loss
 
 
 
+def format_img(img, target_dims, apply_min_filter=False, min_filter_kernel=0):
+    
+    # apply min filter before resizing
+    if apply_min_filter:
+        img = cv2.erode(img, min_filter_kernel, iterations=1)
+    
+    # resize image
+    img = cv2.resize(img, (target_dims[1], target_dims[0]))
+    return img
+
 
 
 def show_predictions(X, Y, predictions):
@@ -58,45 +67,34 @@ def show_predictions(X, Y, predictions):
     fig, axes = plt.subplots(2, examples_to_show, sharex=True, sharey=True)
     channels = Y.shape[-1]
     
-    # prepare frames with solid colors
+    # get rgb values for each whisker
     cmap = plt.cm.spring
-    color_frames = np.zeros((X.shape[1], X.shape[2], 3, channels), dtype='float32')
+    colors = np.zeros((channels,3))
     for channel in range(channels):
-        rgb = cmap(channel / (channels-1))[0:3]
-        for color in range(3):
-            color_frames[:,:,color,channel] = rgb[color]
+        colors[channel,:] = cmap(channel / (channels-1))[0:3]
     
     
+    # plot ground true and predictions for each sample
     for col in range(examples_to_show):
         
         # get raw image
         raw_img = X[col][:,:,0]
         raw_img = np.repeat(raw_img[:,:,None], 3, axis=2) # add color dimension
         
-        # show ground truth
-        colored_labels = np.zeros(color_frames.shape, dtype='float32')
-        for channel in range(channels):
-            temp = Y[col,:,:,channel]
-            temp= np.repeat(temp[:,:,None], 3, axis=2)
-            colored_labels[:,:,:,channel] =  temp * color_frames[:,:,:,channel]
-        colored_labels = np.amax(colored_labels, axis=3)
-        merged = cv2.addWeighted(colored_labels, 1.0, raw_img, 1.0, 0)
-        merged = np.clip(merged,0,1)
-        axes[0, col].imshow(merged)
-        
-        # show prediction
-        colored_labels = np.zeros(color_frames.shape, dtype='float32')
-        for channel in range(channels):
-            temp = predictions[col,:,:,channel]
-            temp= np.repeat(temp[:,:,None], 3, axis=2)
-            colored_labels[:,:,:,channel] =  temp * color_frames[:,:,:,channel]
-        colored_labels = np.amax(colored_labels, axis=3)
-        merged = cv2.addWeighted(colored_labels, 1.0, raw_img, 1.0, 0)
-        merged = np.clip(merged,0,1)
-        axes[1, col].imshow(merged)
-        
-        # pimp axis
-        for row in range(2):
-            axes[row,col].axis('off')
-    
+        # show ground truth and predictions
+        for i, data in enumerate((Y, predictions)):
+            colored_labels = np.zeros(((X.shape[1], data.shape[2], 3, channels)), dtype='float32')
+            for channel in range(channels):
+                colored_labels[:,:,:,channel] =  np.repeat(data[col,:,:,channel,None], 3, axis=2) * colors[channel,:]
+            colored_labels = np.amax(colored_labels, axis=3) # collapse across all colors
+            merged = np.clip(cv2.addWeighted(colored_labels, 1.0, raw_img, 1.0, 0), 0, 1) # overlay raw image
+            axes[i, col].imshow(merged)
+            axes[i, col].axis('off')
     plt.tight_layout()
+
+
+
+
+
+
+
