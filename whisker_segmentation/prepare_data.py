@@ -19,7 +19,7 @@ img_dims = [dim-dim%4 for dim in img_dims] # ensure dimensions are divisble by f
 
 
 # create or overwrite folders for data
-data_dir = 'data\\data_%.1fscaling_filtering%i_%s' % (scaling, label_filtering, 'binary' if are_labels_binary else 'gaus')
+data_dir = 'data\\%.2fscaling_filtering%i_%s' % (scaling, label_filtering, 'binary' if are_labels_binary else 'gaus')
 dirs = [data_dir+'\\labeled', data_dir+'\\frames']
 for dir in dirs:
     if os.path.exists(dir):

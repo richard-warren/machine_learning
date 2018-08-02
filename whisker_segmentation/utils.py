@@ -56,32 +56,39 @@ def show_predictions(X, Y, predictions):
     
     # prepare figure
     plt.close('all')
-    fig, axes = plt.subplots(2, examples_to_show, sharex=True, sharey=True)
     channels = Y.shape[-1]
+    fig, axes = plt.subplots(examples_to_show, channels+1, sharex=True, sharey=True)
+    
     
     # get rgb values for each whisker
     cmap = plt.cm.spring
-    colors = np.zeros((channels,3))
+    colors = np.zeros((channels,3), dtype='float32')
     for channel in range(channels):
         colors[channel,:] = cmap(channel / (channels-1))[0:3]
     
     
     # plot ground true and predictions for each sample
-    for col in range(examples_to_show):
+    for row in range(examples_to_show):
         
         # get raw image
-        raw_img = X[col][:,:,0]
+        raw_img = X[row][:,:,0]
         raw_img = np.repeat(raw_img[:,:,None], 3, axis=2) # add color dimension
         
+        # show ground truth
+        colored_labels = np.zeros(((X.shape[1], X.shape[2], 3, channels)), dtype='float32')
+        for channel in range(channels):
+                colored_labels[:,:,:,channel] =  np.repeat(Y[row,:,:,channel,None], 3, axis=2) * colors[channel,:]
+        colored_labels = np.amax(colored_labels, axis=3) # collapse across all colors
+        merged = np.clip(cv2.addWeighted(colored_labels, 1.0, raw_img, 1.0, 0), 0, 1) # overlay raw image
+        axes[row, 0].imshow(merged)
+        axes[row, 0].axis('off')    
+                
         # show ground truth and predictions
-        for i, data in enumerate((Y, predictions)):
-            colored_labels = np.zeros(((X.shape[1], data.shape[2], 3, channels)), dtype='float32')
-            for channel in range(channels):
-                colored_labels[:,:,:,channel] =  np.repeat(data[col,:,:,channel,None], 3, axis=2) * colors[channel,:]
-            colored_labels = np.amax(colored_labels, axis=3) # collapse across all colors
-            merged = np.clip(cv2.addWeighted(colored_labels, 1.0, raw_img, 1.0, 0), 0, 1) # overlay raw image
-            axes[i, col].imshow(merged)
-            axes[i, col].axis('off')
+        for channel in range(channels):
+            colored_label =  np.repeat(predictions[row,:,:,channel,None], 3, axis=2) * colors[channel,:]
+            merged = np.clip(cv2.addWeighted(colored_label, 1.0, raw_img, 1.0, 0), 0, 1) # overlay raw image
+            axes[row, channel+1].imshow(merged)
+            axes[row, channel+1].axis('off')
     plt.tight_layout()
 
 

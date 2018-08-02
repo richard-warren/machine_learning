@@ -1,12 +1,5 @@
 # WHISKER SEGMENTATION
-'''
-TO DO:
-data generator
-how to make predictions with data generator?
-smarter Y normalization
-checkpoint saving, training termination rules, and naming models with settings
-way to plot loss and training like eddie
-'''
+
 
 from utils import create_network, show_predictions, DataGenerator
 from keras.optimizers import Adam
@@ -16,11 +9,16 @@ import keras.backend as K
 from glob import glob
 from config import test_set_portion, are_labels_binary, data_dir, whiskers, lr_init, first_layer_filters, batch_size, use_cpu
 import cv2
+from keras.callbacks import EarlyStopping, ModelCheckpoint
+import losswise
+from losswise.libs import LosswiseKerasCallback
 
 
 
+# set up losswise.com visualization
+losswise.set_api_key('9BDAXRBWA')
 
-
+    
 # split into train and test sets
 total_imgs = len(list(glob(data_dir+'\\frames\\*.png')))
 all_inds = list(range(0, total_imgs))
@@ -51,15 +49,18 @@ if use_cpu:
     config = tf.ConfigProto(device_count={'GPU':0})
     sess = tf.Session(config=config)
     K.set_session(sess)
-model.fit_generator(generator=train_generator, validation_data=test_generator)
+callbacks = [EarlyStopping(patience=10, verbose=1), # stop when validation loss stops increasing
+           ModelCheckpoint('models\\weights.{epoch:02d}-{val_loss:.2f}.hdf5', period=10),
+           LosswiseKerasCallback(tag='giterdone')] # save models periodically
+model.fit_generator(generator=train_generator, validation_data=test_generator, epochs=100, callbacks=callbacks)
 
 
 
 # generate and visualize predictions
 X, Y = test_generator.__getitem__(0)
 predictions = model.predict(X)
-examples_to_show = 6
+examples_to_show = 3
 inds = np.random.choice(range(X.shape[0]), size=examples_to_show, replace=False)
-show_predictions(X[inds], Y[inds], predictions)
+show_predictions(X[inds], Y[inds], predictions[inds])
 
 
