@@ -1,5 +1,6 @@
 from keras.models import Model
 from keras.layers import Input, Conv2D, Conv2DTranspose, MaxPooling2D
+from keras.utils import Sequence
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
@@ -46,15 +47,6 @@ def create_network(img_size, output_channels, filters=64, optimizer='adam', loss
 
 
 
-def format_img(img, target_dims, apply_min_filter=False, min_filter_kernel=0):
-    
-    # apply min filter before resizing
-    if apply_min_filter:
-        img = cv2.erode(img, min_filter_kernel, iterations=1)
-    
-    # resize image
-    img = cv2.resize(img, (target_dims[1], target_dims[0]))
-    return img
 
 
 
@@ -91,6 +83,74 @@ def show_predictions(X, Y, predictions):
             axes[i, col].imshow(merged)
             axes[i, col].axis('off')
     plt.tight_layout()
+
+
+
+
+
+class DataGenerator(Sequence):
+    # keras data generator class
+    
+    
+    def __init__(self, img_inds, data_dir, img_dims, output_channels=1, batch_size=16, shuffle=True, are_labels_binary=False):
+        # initialization
+        
+        self.data_dir = data_dir
+        self.img_inds = img_inds
+        self.img_dims = img_dims
+        self.output_channels = output_channels
+        self.batch_size = batch_size
+        self.shuffle = shuffle
+        self.are_labels_binary = are_labels_binary
+        self.on_epoch_end() # shuffle inds on initialization
+        
+        
+    def __len__(self):
+        # number of batches per epoch
+        
+        return int(np.floor(len(self.img_inds) / self.batch_size))
+    
+    
+    def __getitem__(self, index):
+        # gets data for batch
+        
+        # initialize containers
+        batch_inds = self.img_inds[index*self.batch_size : (index+1)*self.batch_size]
+        X = np.empty((self.batch_size, self.img_dims[0], self.img_dims[1], 1), dtype='float32')
+        Y = np.empty((self.batch_size, self.img_dims[0], self.img_dims[1], self.output_channels),
+                     dtype='bool' if self.are_labels_binary else 'float32')
+        
+        
+        # get data
+        for i, batch_ind in enumerate(batch_inds):
+            
+            # load image
+            img = cv2.imread('%s\\frames\\img%i.png' % (self.data_dir, batch_ind+1))[:, :, 1].astype('float32') / 255
+            X[i] = img[:,:,None]
+            
+            # load labels
+            for j in range(self.output_channels):
+                file = "%s\\labeled\\frame%05d_whisker_C%i.png" % (self.data_dir, batch_ind+1, j)
+                label = cv2.imread(file)[:, :, 1]
+                Y[i,:,:,j] = label.astype('float32') / 255
+    
+        # normalize Y values
+        if self.are_labels_binary:
+            Y = Y>0
+        else:
+            Y = Y / np.max(Y)
+
+        return X, Y
+    
+
+    def on_epoch_end(self):
+        # shuffle data at the end of epoch
+        
+        if self.shuffle == True:
+            np.random.shuffle(self.img_inds)
+
+
+
 
 
 
