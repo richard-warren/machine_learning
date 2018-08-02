@@ -8,18 +8,18 @@ from tqdm import tqdm
 
 
 
-total_imgs = len(list(glob('data_raw\\frames\\*.png')))
+total_imgs = len(list(glob('data\\raw\\frames\\*.png')))
 
 
 # determine target img demensions
-img_dims = cv2.imread('data_raw\\frames\\img1.png')[:, :, 1].shape # load sample image
+img_dims = cv2.imread('data\\raw\\frames\\img1.png')[:, :, 1].shape # load sample image
 img_dims = [int(dim*scaling) for dim in img_dims] # reduce by down_sampling factor
 img_dims = [dim-dim%4 for dim in img_dims] # ensure dimensions are divisble by four
 
 
 
 # create or overwrite folders for data
-data_dir = 'data_%.1fscaling_filtering%i_%s' % (scaling, label_filtering, 'binary' if are_labels_binary else 'gaus')
+data_dir = 'data\\data_%.1fscaling_filtering%i_%s' % (scaling, label_filtering, 'binary' if are_labels_binary else 'gaus')
 dirs = [data_dir+'\\labeled', data_dir+'\\frames']
 for dir in dirs:
     if os.path.exists(dir):
@@ -39,7 +39,7 @@ dilation_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(label_filtering, 
 for i in tqdm(range(total_imgs)):
     
     # load and resize raw image
-    img = cv2.imread('data_raw\\frames\\img%i.png' % (i+1))
+    img = cv2.imread('data\\raw\\frames\\img%i.png' % (i+1))
     img = cv2.erode(img, min_filter_kernel)
     img = cv2.resize(img, (img_dims[1], img_dims[0]))
     cv2.imwrite('%s\\frames\\img%i.png' % (data_dir, i+1), img)
@@ -49,8 +49,8 @@ for i in tqdm(range(total_imgs)):
         file_name = 'frame%05d_whisker_C%i.png' % (i+1, j)
         
         # create confidence map
-        if os.path.isfile('data_raw\\labeled\\' + file_name):
-            label = cv2.imread('data_raw\\labeled\\' + file_name)
+        if os.path.isfile('data\\raw\\labeled\\' + file_name):
+            label = cv2.imread('data\\raw\\labeled\\' + file_name)
             if are_labels_binary:
                 label = cv2.dilate(label, dilation_kernel)
             else:

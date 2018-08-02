@@ -1,7 +1,7 @@
 
 
 # training settings
-data_dir= 'data_0.5scaling_filtering50_gaus'
+data_dir= 'data\\0.5scaling_filtering50_gaus'
 use_cpu = True
 test_set_portion = .05
 lr_init = .001
