@@ -1,7 +1,7 @@
 '''
 TO DO:
-    -add prediction saving
-    -write to videos!
+write to video
+scripts to generate predictions on a video
 '''
 
 # training settings
@@ -12,6 +12,7 @@ lr_init = .001
 batch_size = 32
 training_epochs = 100
 first_layer_filters = 16
+save_test_predictions = True
 
 
 
@@ -19,3 +20,7 @@ first_layer_filters = 16
 whiskers = 4
 label_filtering = 50
 scaling = 0.25
+
+
+
+# analyze_video settings

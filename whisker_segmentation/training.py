@@ -6,7 +6,7 @@ from keras.optimizers import Adam
 import numpy as np
 import tensorflow as tf
 import keras.backend as K
-from config import test_set_portion, dataset_name, lr_init, first_layer_filters, batch_size, use_cpu, training_epochs
+from config import test_set_portion, dataset_name, lr_init, first_layer_filters, batch_size, use_cpu, training_epochs, save_test_predictions
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 import losswise
 from losswise.libs import LosswiseKerasCallback
@@ -34,7 +34,6 @@ with tables.open_file(dataset_name, 'r') as dataset:
                            loss_fcn = 'mean_squared_error')
     
 
-
     # train, omg!
     if use_cpu:
         config = tf.ConfigProto(device_count={'GPU':0})
@@ -48,13 +47,23 @@ with tables.open_file(dataset_name, 'r') as dataset:
     
     
     # generate test set predictions
-    test_batches = len(test_generator)
-    X_test = np.empty((test_batches*batch_size, train_generator.img_dims[0], train_generator.img_dims[1], 1), dtype='float32')
-    Y_test = np.empty((test_batches*batch_size, train_generator.img_dims[0], train_generator.img_dims[1], train_generator.channels), dtype='float32')
-    for i in range(test_batches):
-        inds = np.arange((i)*batch_size, (i+1)*batch_size)
-        X_test[inds], Y_test[inds] = test_generator[i]
-    predictions_test = model.predict_generator(test_generator)
+    if save_test_predictions:
+        
+        # get X, Y, and predictions for test set
+        test_batches = len(test_generator)
+        X_test = np.empty((test_batches*batch_size, train_generator.img_dims[0], train_generator.img_dims[1], 1), dtype='float32')
+        Y_test = np.empty((test_batches*batch_size, train_generator.img_dims[0], train_generator.img_dims[1], train_generator.channels), dtype='float32')
+        for i in range(test_batches):
+            inds = np.arange((i)*batch_size, (i+1)*batch_size)
+            X_test[inds], Y_test[inds] = test_generator[i]
+        predictions_test = model.predict_generator(test_generator)
+        
+        # save to h5 file
+        with tables.open_file('predictions\\%s_predictions.h5' % (model.name), 'w') as file: # open h5 file for saving test images and labels
+            file.create_array(file.root, 'imgs', X_test)
+            file.create_array(file.root, 'labels', Y_test)
+            file.create_array(file.root, 'predictions', predictions_test)
+            file.create_array(file.root, 'test_set_imgs_ids', [ind+1 for ind in test_inds])
     
     
 

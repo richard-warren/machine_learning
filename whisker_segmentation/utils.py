@@ -4,7 +4,6 @@ from keras.utils import Sequence
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
-import ipdb
 
 
 
@@ -35,7 +34,7 @@ def create_network(img_size, output_channels, filters=64, optimizer='adam', loss
     x_out = Conv2DTranspose(output_channels, kernel_size=3, strides=2, padding="same", activation="linear", kernel_initializer="glorot_normal")(x4)
     
     # compile
-    net = Model(inputs=x_in, outputs=x_out, name="whiskerTracer")
+    net = Model(inputs=x_in, outputs=x_out, name="whisker_tracer")
     net.compile(optimizer=optimizer, loss=loss_fcn)
     
     # show network summary
