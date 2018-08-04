@@ -4,7 +4,7 @@ from keras.utils import Sequence
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
-
+import ipdb
 
 
 
@@ -49,14 +49,14 @@ def create_network(img_size, output_channels, filters=64, optimizer='adam', loss
 
 
 
-def show_predictions(X, Y, predictions):
+def show_predictions(X, Y, predictions, examples_to_show=3):
     
-    examples_to_show = X.shape[0]
     
     # prepare figure
-    plt.close('all')
     channels = Y.shape[-1]
     fig, axes = plt.subplots(examples_to_show, channels+1, sharex=True, sharey=True)
+    inds = np.random.choice(range(X.shape[0]), size=examples_to_show, replace=False)
+    
     
     
     # get rgb values for each whisker
@@ -70,13 +70,13 @@ def show_predictions(X, Y, predictions):
     for row in range(examples_to_show):
         
         # get raw image
-        raw_img = X[row][:,:,0]
+        raw_img = X[inds[row],:,:,0]
         raw_img = np.repeat(raw_img[:,:,None], 3, axis=2) # add color dimension
         
         # show ground truth
         colored_labels = np.zeros(((X.shape[1], X.shape[2], 3, channels)), dtype='float32')
         for channel in range(channels):
-                colored_labels[:,:,:,channel] =  np.repeat(Y[row,:,:,channel,None], 3, axis=2) * colors[channel,:]
+                colored_labels[:,:,:,channel] =  np.repeat(Y[inds[row],:,:,channel,None], 3, axis=2) * colors[channel,:]
         colored_labels = np.amax(colored_labels, axis=3) # collapse across all colors
         merged = np.clip(cv2.addWeighted(colored_labels, 1.0, raw_img, 1.0, 0), 0, 1) # overlay raw image
         axes[row, 0].imshow(merged)
@@ -84,7 +84,7 @@ def show_predictions(X, Y, predictions):
                 
         # show ground truth and predictions
         for channel in range(channels):
-            colored_label =  np.repeat(predictions[row,:,:,channel,None], 3, axis=2) * colors[channel,:]
+            colored_label =  np.repeat(predictions[inds[row],:,:,channel,None], 3, axis=2) * colors[channel,:]
             merged = np.clip(cv2.addWeighted(colored_label, 1.0, raw_img, 1.0, 0), 0, 1) # overlay raw image
             axes[row, channel+1].imshow(merged)
             axes[row, channel+1].axis('off')
@@ -98,18 +98,16 @@ class DataGenerator(Sequence):
     # keras data generator class
     
     
-    def __init__(self, img_inds, dataset, data_dir, img_dims, output_channels=1, batch_size=16, shuffle=True, are_labels_binary=False, read_h5 = True):
+    def __init__(self, img_inds, dataset, batch_size=16, shuffle=True):
         # initialization
         
         self.img_inds = img_inds
         self.dataset = dataset
-        self.data_dir = data_dir
-        self.img_dims = img_dims
-        self.output_channels = output_channels
         self.batch_size = batch_size
         self.shuffle = shuffle
-        self.are_labels_binary = are_labels_binary
-        self.read_h5 = read_h5
+        
+        self.img_dims = (dataset.root.imgs.shape[1], dataset.root.imgs.shape[2])
+        self.channels = dataset.root.labels.shape[-1]
         
         self.on_epoch_end() # shuffle inds on initialization
         
@@ -123,35 +121,15 @@ class DataGenerator(Sequence):
     def __getitem__(self, index):
         # gets data for batch
         
-        # initialize containers
+        # get data from h5 file
         batch_inds = self.img_inds[index*self.batch_size : (index+1)*self.batch_size]
-        
-        if not self.read_h5:
-            X = np.empty((self.batch_size, self.img_dims[0], self.img_dims[1], 1), dtype='float32')
-            Y = np.empty((self.batch_size, self.img_dims[0], self.img_dims[1], self.output_channels),
-                         dtype='bool' if self.are_labels_binary else 'float32')
-            
-            # get data
-            for i, batch_ind in enumerate(batch_inds):
-                
-                # load image
-                img = cv2.imread('%s\\frames\\img%i.png' % (self.data_dir, batch_ind+1))[:, :, 1].astype('float32') / 255
-                X[i] = img[:,:,None]
-                
-                # load labels
-                for j in range(self.output_channels):
-                    file = "%s\\labeled\\frame%05d_whisker_C%i.png" % (self.data_dir, batch_ind+1, j)
-                    label = cv2.imread(file)[:, :, 1]
-                    Y[i,:,:,j] = label.astype('float32') / 255
-        else:
-            X = self.dataset.root.imgs[batch_inds,:,:,:]
-            Y = self.dataset.root.labels[batch_inds,:,:,:]
+        X = self.dataset.root.imgs[batch_inds,:,:,:].astype('float32')
+        Y = self.dataset.root.labels[batch_inds,:,:,:].astype('float32')
     
-        # normalize Y values
-        if self.are_labels_binary:
-            Y = Y>0
-        else:
+        # normalize
+        if np.max(Y)>0:
             Y = Y / np.max(Y)
+        X = X / 255
 
         return X, Y
     
@@ -159,7 +137,7 @@ class DataGenerator(Sequence):
     def on_epoch_end(self):
         # shuffle data at the end of epoch
         
-        if self.shuffle == True:
+        if self.shuffle:
             np.random.shuffle(self.img_inds)
 
 

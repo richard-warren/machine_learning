@@ -1,8 +1,11 @@
-
+'''
+TO DO:
+    -add prediction saving
+    -write to videos!
+'''
 
 # training settings
-data_dir= 'data\\0.25scaling_filtering50_gaus'
-read_h5 = True
+dataset_name = 'data\\scaling0.25_filtering50.h5'
 use_cpu = False
 test_set_portion = .05
 lr_init = .001
@@ -16,5 +19,3 @@ first_layer_filters = 16
 whiskers = 4
 label_filtering = 50
 scaling = 0.25
-are_labels_binary = False
-write_imgs = False

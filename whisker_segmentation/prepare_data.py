@@ -1,8 +1,7 @@
 from glob import glob
 import cv2
-from config import scaling, label_filtering, whiskers, are_labels_binary, write_imgs
+from config import scaling, label_filtering, whiskers
 import os.path
-import shutil
 import numpy as np
 import tables
 from tqdm import tqdm
@@ -19,27 +18,16 @@ img_dims = [dim-dim%4 for dim in img_dims] # ensure dimensions are divisble by f
 
 
 
-# create or overwrite folders for data
-data_dir = 'data\\%.2fscaling_filtering%i_%s' % (scaling, label_filtering, 'binary' if are_labels_binary else 'gaus')
-dirs = [data_dir+'\\labeled', data_dir+'\\frames']
-if write_imgs:
-    for dir in dirs:
-        if os.path.exists(dir):
-            shutil.rmtree(dir)
-            os.makedirs(dir)
-
-
-
 # create kernels for filtering
-label_filtering += (label_filtering+1)%2 # ensure this value is odd
+label_filtering_odd = label_filtering + (label_filtering+1)%2 # ensure this value is odd
 min_filter_kernel = np.ones(np.repeat(int(np.ceil(1/scaling)), 2), dtype='uint8') # used to erode image prior to down-sampling to maintain whisker thickness
-dilation_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(label_filtering, label_filtering))
 
 
-with tables.open_file('%s\\dataset.h5' % (data_dir), 'w') as file: # open h5 file for saving all images and labels
+file_name = 'data\\scaling%.2f_filtering%i.h5' % (scaling, label_filtering)
+with tables.open_file(file_name, 'w') as file: # open h5 file for saving all images and labels
     
-    file.create_array(file.root, 'imgs', np.zeros((total_imgs, img_dims[0], img_dims[1], 1), dtype='uint8'))
-    file.create_array(file.root, 'labels', np.zeros((total_imgs, img_dims[0], img_dims[1], whiskers), dtype='float32'))
+    file.create_array(file.root, 'imgs', np.empty((total_imgs, img_dims[0], img_dims[1], 1), dtype='uint8'))
+    file.create_array(file.root, 'labels', np.empty((total_imgs, img_dims[0], img_dims[1], whiskers), dtype='float32'))
     
     # create images and labels
     for i in tqdm(range(total_imgs)):
@@ -48,8 +36,6 @@ with tables.open_file('%s\\dataset.h5' % (data_dir), 'w') as file: # open h5 fil
         img = cv2.imread('data\\raw\\frames\\img%i.png' % (i+1))[:,:,1]
         img = cv2.erode(img, min_filter_kernel)
         img = cv2.resize(img, (img_dims[1], img_dims[0]))
-        if write_imgs:
-            cv2.imwrite('%s\\frames\\img%i.png' % (data_dir, i+1), img)
         file.root.imgs[i] = img[:,:,None]
         
         # load labels
@@ -59,16 +45,8 @@ with tables.open_file('%s\\dataset.h5' % (data_dir), 'w') as file: # open h5 fil
             # create confidence map
             if os.path.isfile('data\\raw\\labeled\\' + file_name):
                 label = cv2.imread('data\\raw\\labeled\\' + file_name)[:,:,1]
-                if are_labels_binary:
-                    label = cv2.dilate(label, dilation_kernel)
-                else:
-                    label = cv2.GaussianBlur(label.astype('float32'), (label_filtering, label_filtering), 0)
-                    label = cv2.resize(label, (img_dims[1], img_dims[0]))
-                if write_imgs:
-                    label = label * (255/np.amax(label)).astype('uint8')
+                label = cv2.GaussianBlur(label.astype('float32'), (label_filtering_odd, label_filtering_odd), 0)
+                label = cv2.resize(label, (img_dims[1], img_dims[0]))
             else:
-                label = np.zeros(img_dims, dtype='uint8') # set confidence map to all zeros if whisker is not in frame
-            
-            if write_imgs:
-                cv2.imwrite('%s\\labeled\\%s' % (data_dir, file_name), label)
+                label = np.zeros(img_dims, dtype='float32') # set confidence map to all zeros if whisker is not in frame
             file.root.labels[i,:,:,j] = label
