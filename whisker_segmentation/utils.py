@@ -8,7 +8,6 @@ import cv2
 
 
 
-
 def create_network(img_size, output_channels, filters=64, optimizer='adam', loss_fcn='mean_squared_error'):
     
     # create fully convolutional network
@@ -99,16 +98,19 @@ class DataGenerator(Sequence):
     # keras data generator class
     
     
-    def __init__(self, img_inds, data_dir, img_dims, output_channels=1, batch_size=16, shuffle=True, are_labels_binary=False):
+    def __init__(self, img_inds, dataset, data_dir, img_dims, output_channels=1, batch_size=16, shuffle=True, are_labels_binary=False, read_h5 = True):
         # initialization
         
-        self.data_dir = data_dir
         self.img_inds = img_inds
+        self.dataset = dataset
+        self.data_dir = data_dir
         self.img_dims = img_dims
         self.output_channels = output_channels
         self.batch_size = batch_size
         self.shuffle = shuffle
         self.are_labels_binary = are_labels_binary
+        self.read_h5 = read_h5
+        
         self.on_epoch_end() # shuffle inds on initialization
         
         
@@ -123,23 +125,27 @@ class DataGenerator(Sequence):
         
         # initialize containers
         batch_inds = self.img_inds[index*self.batch_size : (index+1)*self.batch_size]
-        X = np.empty((self.batch_size, self.img_dims[0], self.img_dims[1], 1), dtype='float32')
-        Y = np.empty((self.batch_size, self.img_dims[0], self.img_dims[1], self.output_channels),
-                     dtype='bool' if self.are_labels_binary else 'float32')
         
-        
-        # get data
-        for i, batch_ind in enumerate(batch_inds):
+        if not self.read_h5:
+            X = np.empty((self.batch_size, self.img_dims[0], self.img_dims[1], 1), dtype='float32')
+            Y = np.empty((self.batch_size, self.img_dims[0], self.img_dims[1], self.output_channels),
+                         dtype='bool' if self.are_labels_binary else 'float32')
             
-            # load image
-            img = cv2.imread('%s\\frames\\img%i.png' % (self.data_dir, batch_ind+1))[:, :, 1].astype('float32') / 255
-            X[i] = img[:,:,None]
-            
-            # load labels
-            for j in range(self.output_channels):
-                file = "%s\\labeled\\frame%05d_whisker_C%i.png" % (self.data_dir, batch_ind+1, j)
-                label = cv2.imread(file)[:, :, 1]
-                Y[i,:,:,j] = label.astype('float32') / 255
+            # get data
+            for i, batch_ind in enumerate(batch_inds):
+                
+                # load image
+                img = cv2.imread('%s\\frames\\img%i.png' % (self.data_dir, batch_ind+1))[:, :, 1].astype('float32') / 255
+                X[i] = img[:,:,None]
+                
+                # load labels
+                for j in range(self.output_channels):
+                    file = "%s\\labeled\\frame%05d_whisker_C%i.png" % (self.data_dir, batch_ind+1, j)
+                    label = cv2.imread(file)[:, :, 1]
+                    Y[i,:,:,j] = label.astype('float32') / 255
+        else:
+            X = self.dataset.root.imgs[batch_inds,:,:,:]
+            Y = self.dataset.root.labels[batch_inds,:,:,:]
     
         # normalize Y values
         if self.are_labels_binary:

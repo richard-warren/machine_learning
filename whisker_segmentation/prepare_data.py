@@ -1,9 +1,10 @@
 from glob import glob
 import cv2
-from config import scaling, label_filtering, whiskers, are_labels_binary
+from config import scaling, label_filtering, whiskers, are_labels_binary, write_imgs
 import os.path
 import shutil
 import numpy as np
+import tables
 from tqdm import tqdm
 
 
@@ -21,10 +22,11 @@ img_dims = [dim-dim%4 for dim in img_dims] # ensure dimensions are divisble by f
 # create or overwrite folders for data
 data_dir = 'data\\%.2fscaling_filtering%i_%s' % (scaling, label_filtering, 'binary' if are_labels_binary else 'gaus')
 dirs = [data_dir+'\\labeled', data_dir+'\\frames']
-for dir in dirs:
-    if os.path.exists(dir):
-        shutil.rmtree(dir)
-    os.makedirs(dir)
+if write_imgs:
+    for dir in dirs:
+        if os.path.exists(dir):
+            shutil.rmtree(dir)
+            os.makedirs(dir)
 
 
 
@@ -34,30 +36,39 @@ min_filter_kernel = np.ones(np.repeat(int(np.ceil(1/scaling)), 2), dtype='uint8'
 dilation_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(label_filtering, label_filtering))
 
 
-
-# create images and labels
-for i in tqdm(range(total_imgs)):
+with tables.open_file('%s\\dataset.h5' % (data_dir), 'w') as file: # open h5 file for saving all images and labels
     
-    # load and resize raw image
-    img = cv2.imread('data\\raw\\frames\\img%i.png' % (i+1))
-    img = cv2.erode(img, min_filter_kernel)
-    img = cv2.resize(img, (img_dims[1], img_dims[0]))
-    cv2.imwrite('%s\\frames\\img%i.png' % (data_dir, i+1), img)
+    file.create_array(file.root, 'imgs', np.zeros((total_imgs, img_dims[0], img_dims[1], 1), dtype='uint8'))
+    file.create_array(file.root, 'labels', np.zeros((total_imgs, img_dims[0], img_dims[1], whiskers), dtype='float32'))
     
-    # load labels
-    for j in range(whiskers):
-        file_name = 'frame%05d_whisker_C%i.png' % (i+1, j)
+    # create images and labels
+    for i in tqdm(range(total_imgs)):
         
-        # create confidence map
-        if os.path.isfile('data\\raw\\labeled\\' + file_name):
-            label = cv2.imread('data\\raw\\labeled\\' + file_name)
-            if are_labels_binary:
-                label = cv2.dilate(label, dilation_kernel)
+        # load and resize raw image
+        img = cv2.imread('data\\raw\\frames\\img%i.png' % (i+1))[:,:,1]
+        img = cv2.erode(img, min_filter_kernel)
+        img = cv2.resize(img, (img_dims[1], img_dims[0]))
+        if write_imgs:
+            cv2.imwrite('%s\\frames\\img%i.png' % (data_dir, i+1), img)
+        file.root.imgs[i] = img[:,:,None]
+        
+        # load labels
+        for j in range(whiskers):
+            file_name = 'frame%05d_whisker_C%i.png' % (i+1, j)
+            
+            # create confidence map
+            if os.path.isfile('data\\raw\\labeled\\' + file_name):
+                label = cv2.imread('data\\raw\\labeled\\' + file_name)[:,:,1]
+                if are_labels_binary:
+                    label = cv2.dilate(label, dilation_kernel)
+                else:
+                    label = cv2.GaussianBlur(label.astype('float32'), (label_filtering, label_filtering), 0)
+                    label = cv2.resize(label, (img_dims[1], img_dims[0]))
+                if write_imgs:
+                    label = label * (255/np.amax(label)).astype('uint8')
             else:
-                label = cv2.GaussianBlur(label.astype('float32'), (label_filtering, label_filtering), 0)
-                label = cv2.resize(label, (img_dims[1], img_dims[0]))
-            label = label * (255/np.amax(label)).astype('uint8')
-        else:
-            label = np.zeros(img_dims, dtype='uint8') # set confidence map to all zeros if whisker is not in frame
-        
-        cv2.imwrite('%s\\labeled\\%s' % (data_dir, file_name), label)
+                label = np.zeros(img_dims, dtype='uint8') # set confidence map to all zeros if whisker is not in frame
+            
+            if write_imgs:
+                cv2.imwrite('%s\\labeled\\%s' % (data_dir, file_name), label)
+            file.root.labels[i,:,:,j] = label

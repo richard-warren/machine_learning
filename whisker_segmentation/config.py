@@ -2,7 +2,8 @@
 
 # training settings
 data_dir= 'data\\0.25scaling_filtering50_gaus'
-use_cpu = True
+read_h5 = True
+use_cpu = False
 test_set_portion = .05
 lr_init = .001
 batch_size = 32
@@ -16,3 +17,4 @@ whiskers = 4
 label_filtering = 50
 scaling = 0.25
 are_labels_binary = False
+write_imgs = False
