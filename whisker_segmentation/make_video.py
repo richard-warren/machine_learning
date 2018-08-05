@@ -1,8 +1,3 @@
-'''
-TO DO:
-should load frames and make predictions in batches, would be faster
-'''
-
 import cv2
 from keras.models import load_model
 from config import model_name, vid_name
@@ -46,7 +41,7 @@ for i in tqdm(range(total_frames)):
         
         # add predicted labels to frame
         frame_hires = frame_hires.astype('float32') / 255
-        labeled_frame = add_labels_to_frame(frame_hires[:,:,1], prediction)
+        labeled_frame = add_labels_to_frame(frame_hires[:,:,1], prediction, range(channels))
         
         # write to video
         labeled_frame = np.clip((labeled_frame*255).astype('uint8'), 0, 255)

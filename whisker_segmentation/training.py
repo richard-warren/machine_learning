@@ -1,12 +1,9 @@
-# WHISKER SEGMENTATION
-
-
 from utils import create_network, show_predictions, DataGenerator
 from keras.optimizers import Adam
 import numpy as np
 import tensorflow as tf
 import keras.backend as K
-from config import test_set_portion, dataset_name, lr_init, first_layer_filters, batch_size, use_cpu, training_epochs, save_test_predictions
+from config import test_set_portion, dataset_name, lr_init, first_layer_filters, batch_size, use_cpu, training_epochs, save_test_predictions, kernel_size
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 import losswise
 from losswise.libs import LosswiseKerasCallback
@@ -30,6 +27,7 @@ with tables.open_file(dataset_name, 'r') as dataset:
     train_generator = DataGenerator(train_inds, dataset, batch_size=batch_size, shuffle=True)
     test_generator = DataGenerator(test_inds, dataset, batch_size=batch_size, shuffle=False)
     model = create_network((train_generator.img_dims[0], train_generator.img_dims[1], 1), train_generator.channels, first_layer_filters, 
+                           kernel_size = kernel_size,
                            optimizer = Adam(lr=lr_init),
                            loss_fcn = 'mean_squared_error')
     
@@ -40,7 +38,7 @@ with tables.open_file(dataset_name, 'r') as dataset:
         sess = tf.Session(config=config)
         K.set_session(sess)
     callbacks = [EarlyStopping(patience=10, verbose=1), # stop when validation loss stops increasing
-               ModelCheckpoint('models\\weights.{epoch:02d}-{val_loss:.6f}.hdf5', period=5), # save models periodically
+               ModelCheckpoint('models\\filters%i_kern%i_weights.{epoch:02d}-{val_loss:.6f}.hdf5'%(first_layer_filters, kernel_size), period=5), # save models periodically
                LosswiseKerasCallback(tag='giterdone')] # show progress on losswise.com
     model.fit_generator(generator=train_generator, validation_data=test_generator, epochs=training_epochs, callbacks=callbacks)
     
