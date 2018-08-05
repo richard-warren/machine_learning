@@ -11,7 +11,7 @@ import os
 from utils import add_labels_to_frame
 import numpy as np
 from tqdm import tqdm
-from scipy.interpolate import interpn
+
 
 
 # load model
@@ -32,9 +32,6 @@ vid_write = cv2.VideoWriter('videos\\'+file_name+'_edited.avi', fourcc, input_fp
 # initialize min filter for down-sampling
 min_filter_kernel = np.ones(np.repeat(round(input_dims[0]/model_dims[0]), 2), dtype='uint8')
 
-# interpolation parameters
-#x, y, z = [np.linspace(1,dim,dim) for dim in (model_dims[1], model_dims[0], channels)]
-#xi, yi, zi = np.linspace(1,model_dims[1],input_dims[1]), np.linspace(1,model_dims[0],input_dims[0]), z
 
 
 for i in tqdm(range(total_frames)):
@@ -42,18 +39,15 @@ for i in tqdm(range(total_frames)):
     
     if got_frame:
         
-        # min filter (to preserve whiskers) and resize
+        # get prediction
         frame = cv2.erode(frame_hires, min_filter_kernel)
         frame = cv2.resize(frame, model_dims)[:,:,1]
         frame = frame.astype('float32') / 255
-        
-        # get frame prediction and upsampled to input vid size
         prediction = model.predict(frame[None,:,:,None])[0,:,:,:]
-        prediction_upsampled = np.empty((input_dims[1], input_dims[0], model.output_shape[-1]))
-        for channel in range(channels):
-            prediction_upsampled[:,:,channel] = cv2.resize(prediction[:,:,channel], input_dims)
+        
+        # add predicted labels to frame
         frame_hires = frame_hires.astype('float32') / 255
-        labeled_frame = add_labels_to_frame(frame_hires[:,:,1], prediction_upsampled)
+        labeled_frame = add_labels_to_frame(frame_hires[:,:,1], prediction)
         
         # write to video
         labeled_frame = np.clip((labeled_frame*255).astype('uint8'), 0, 255)

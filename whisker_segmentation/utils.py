@@ -143,6 +143,7 @@ class DataGenerator(Sequence):
 
 def add_labels_to_frame(frame, labels):
     
+    
     # get rgb values for each whisker
     channels = labels.shape[-1]
     cmap = plt.cm.spring
@@ -151,11 +152,15 @@ def add_labels_to_frame(frame, labels):
         colors[channel,:] = cmap(channel / (channels-1))[0:3]
         
     # get colored labels
-    colored_labels = np.zeros(((frame.shape[0], frame.shape[1], 3, channels)), dtype='float32')
+    colored_labels = np.zeros(((labels.shape[0], labels.shape[1], 3, channels)), dtype='float32')
     for channel in range(channels):
             colored_labels[:,:,:,channel] =  np.repeat(labels[:,:,channel,None], 3, axis=2) * colors[channel,:]
     colored_labels = np.amax(colored_labels, axis=3) # collapse across all colors
     
+    # upsample labels if necessary
+    if not frame.shape==labels.shape:
+        colored_labels = cv2.resize(colored_labels, (frame.shape[1], frame.shape[0]))
+        
     # merge frame with colored labels
     frame = np.repeat(frame[:,:,None], 3, axis=2) # add color dimension to frame
     merged = np.clip(cv2.addWeighted(colored_labels, 1.0, frame, 1.0, 0), 0, 1) # overlay raw image

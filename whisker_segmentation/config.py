@@ -25,4 +25,4 @@ scaling = 0.25
 
 # make_video settings
 model_name = 'weights.60-0.000218.hdf5'
-vid_name = '180118_KM131.mkv'
+vid_name = '180112_KF119.mkv'
