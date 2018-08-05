@@ -23,4 +23,6 @@ scaling = 0.25
 
 
 
-# analyze_video settings
+# make_video settings
+model_name = 'weights.60-0.000218.hdf5'
+vid_name = '180118_KM131.mkv'
