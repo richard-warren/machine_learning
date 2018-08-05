@@ -57,35 +57,21 @@ def show_predictions(X, Y, predictions, examples_to_show=3):
     inds = np.random.choice(range(X.shape[0]), size=examples_to_show, replace=False)
     
     
-    
-    # get rgb values for each whisker
-    cmap = plt.cm.spring
-    colors = np.zeros((channels,3), dtype='float32')
-    for channel in range(channels):
-        colors[channel,:] = cmap(channel / (channels-1))[0:3]
-    
-    
     # plot ground true and predictions for each sample
     for row in range(examples_to_show):
         
         # get raw image
         raw_img = X[inds[row],:,:,0]
-        raw_img = np.repeat(raw_img[:,:,None], 3, axis=2) # add color dimension
         
         # show ground truth
-        colored_labels = np.zeros(((X.shape[1], X.shape[2], 3, channels)), dtype='float32')
-        for channel in range(channels):
-                colored_labels[:,:,:,channel] =  np.repeat(Y[inds[row],:,:,channel,None], 3, axis=2) * colors[channel,:]
-        colored_labels = np.amax(colored_labels, axis=3) # collapse across all colors
-        merged = np.clip(cv2.addWeighted(colored_labels, 1.0, raw_img, 1.0, 0), 0, 1) # overlay raw image
-        axes[row, 0].imshow(merged)
+        labeled_img = add_labels_to_frame(raw_img, predictions[inds[row]], range(channels))
+        axes[row, 0].imshow(labeled_img)
         axes[row, 0].axis('off')    
                 
         # show ground truth and predictions
         for channel in range(channels):
-            colored_label =  np.repeat(predictions[inds[row],:,:,channel,None], 3, axis=2) * colors[channel,:]
-            merged = np.clip(cv2.addWeighted(colored_label, 1.0, raw_img, 1.0, 0), 0, 1) # overlay raw image
-            axes[row, channel+1].imshow(merged)
+            labeled_img = add_labels_to_frame(raw_img, predictions[inds[row]], iter([channel]))
+            axes[row, channel+1].imshow(labeled_img)
             axes[row, channel+1].axis('off')
     plt.tight_layout()
 
@@ -141,19 +127,20 @@ class DataGenerator(Sequence):
 
 
 
-def add_labels_to_frame(frame, labels):
+def add_labels_to_frame(frame, labels, channels_to_show):
     
     
     # get rgb values for each whisker
     channels = labels.shape[-1]
     cmap = plt.cm.spring
     colors = np.zeros((channels,3), dtype='float32')
+    color_inds = np.linspace(0,1,channels) # not really inds, but evenly spaced values between zero and one
     for channel in range(channels):
-        colors[channel,:] = cmap(channel / (channels-1))[0:3]
+        colors[channel,:] = cmap(color_inds[channel])[0:3]
         
     # get colored labels
     colored_labels = np.zeros(((labels.shape[0], labels.shape[1], 3, channels)), dtype='float32')
-    for channel in range(channels):
+    for channel in channels_to_show:
             colored_labels[:,:,:,channel] =  np.repeat(labels[:,:,channel,None], 3, axis=2) * colors[channel,:]
     colored_labels = np.amax(colored_labels, axis=3) # collapse across all colors
     
