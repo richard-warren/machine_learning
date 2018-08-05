@@ -1,6 +1,5 @@
 '''
 TO DO:
-switch to n-dimensional upsampling
 should load frames and make predictions in batches, would be faster
 '''
 

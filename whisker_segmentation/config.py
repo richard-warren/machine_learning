@@ -1,7 +1,6 @@
 '''
 TO DO:
-write to video
-scripts to generate predictions on a video
+scripts to generate predictions given a video
 '''
 
 # training settings
@@ -24,5 +23,5 @@ scaling = 0.25
 
 
 # make_video settings
-model_name = 'weights.60-0.000218.hdf5'
+model_name = 'weights.45-0.000201.hdf5'
 vid_name = '180112_KF119.mkv'
