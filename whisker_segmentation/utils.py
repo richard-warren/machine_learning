@@ -159,8 +159,13 @@ class DataGenerator(Sequence):
         Y = self.dataset.root.labels[batch_inds,:,:,:].astype('float32')
     
         # normalize
-        if np.max(Y)>0:
-            Y = Y / np.max(Y)
+        # should replace with a one liner
+#        if np.max(Y)>0:
+#            Y = Y / np.max(Y)
+        for smp in range(len(batch_inds)):
+            for channel in range(self.channels):
+                if np.max(Y[smp,:,:,channel])>0:
+                    Y[smp,:,:,channel] = Y[smp,:,:,channel] / np.max(Y[smp,:,:,channel])            
         X = X / 255
 
         return X, Y

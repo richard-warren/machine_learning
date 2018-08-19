@@ -3,11 +3,12 @@ from keras.optimizers import Adam
 import numpy as np
 import tensorflow as tf
 import keras.backend as K
-from config import test_set_portion, dataset_name, lr_init, first_layer_filters, batch_size, use_cpu, training_epochs, save_test_predictions, kernel_size
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 import losswise
 from losswise.libs import LosswiseKerasCallback
 import tables
+from config import test_set_portion, dataset_name, lr_init, first_layer_filters, batch_size, use_cpu, training_epochs, save_test_predictions, kernel_size, use_sample_weights
+
 losswise.set_api_key('9BDAXRBWA') # set up losswise.com visualization
 
     
@@ -30,6 +31,9 @@ with tables.open_file(dataset_name, 'r') as dataset:
                            kernel_size = kernel_size,
                            optimizer = Adam(lr=lr_init),
                            loss_fcn = 'mean_squared_error')
+    
+    # !!! prepare sample weights
+    
     
 
     # train, omg!
