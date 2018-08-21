@@ -195,7 +195,8 @@ def add_labels_to_frame(frame, labels, channels_to_show, add_maxima=False):
     for channel in channels_to_show:
             colored_labels[:,:,:,channel] =  np.repeat(labels[:,:,channel,None], 3, axis=2) * colors[channel,:]
     colored_labels = np.mean(colored_labels, axis=3) # collapse across all colors
-    colored_labels = colored_labels / np.max(colored_labels)
+    if np.max(colored_labels)>0:
+        colored_labels = colored_labels / np.max(colored_labels)
     
     # upsample labels if necessary
     if not frame.shape==labels.shape:

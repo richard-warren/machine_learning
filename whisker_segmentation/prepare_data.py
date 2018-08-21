@@ -78,7 +78,7 @@ with tables.open_file(file_name, 'w') as file: # open h5 file for saving all ima
                 if not (location==0).all(): # when both locations are zero it means the whisker has not been tracked
                     location = np.multiply(location, np.divide(img_dims, original_dims))
                     deltas = np.sqrt((np.power(Y-location[0],2) + np.power(X-location[1],2))) # distance of each pixel to whisker point
-                    label = np.exp(-deltas / (2*int(point_filtering*scaling)^2))
+                    label = np.exp(-deltas / (2*np.power((point_filtering*scaling),2)))
                 else:
                     label = np.zeros(img_dims, dtype='float32') # set confidence map to all zeros if whisker is not in frame
                 
