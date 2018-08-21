@@ -1,6 +1,6 @@
 from glob import glob
 import cv2
-from config import scaling, label_filtering, point_filtering, whiskers, whisker_points
+from config import scaling, trace_filtering, point_filtering, whiskers, whisker_points
 import os.path
 import numpy as np
 import tables
@@ -20,7 +20,7 @@ img_dims = [dim-dim%4 for dim in img_dims] # ensure dimensions are divisble by f
 
 
 # create kernels for filtering
-label_filtering_odd = label_filtering + (label_filtering+1)%2 # ensure this value is odd
+trace_filtering_odd = trace_filtering + (trace_filtering+1)%2 # ensure this value is odd
 min_filter_kernel = np.ones(np.repeat(int(np.ceil(1/scaling)), 2), dtype='uint8') # used to erode image prior to down-sampling to maintain whisker thickness
 
 
@@ -35,9 +35,9 @@ if whisker_points:
             
 
 
-file_name = 'data\\scaling%.2f_points%i.h5' % (scaling, len(whisker_points))
+file_name = 'data\\scaling%.2f_points%i_tracefiltering_%i_pointfiltering%i.h5' % (scaling, len(whisker_points), trace_filtering, point_filtering)
 total_labels = whiskers+ whiskers*len(whisker_points)
-#total_imgs = 1000 # uncomment to troubleshoot
+total_imgs = 1000 # uncomment to troubleshoot
 
 
 with tables.open_file(file_name, 'w') as file: # open h5 file for saving all images and labels
@@ -64,7 +64,7 @@ with tables.open_file(file_name, 'w') as file: # open h5 file for saving all ima
             if os.path.isfile('data\\raw\\labeled\\' + file_name):
                 label = cv2.imread('data\\raw\\labeled\\' + file_name)[:,:,1]
                 original_dims = list(label.shape)
-                label = cv2.GaussianBlur(label.astype('float32'), (label_filtering_odd, label_filtering_odd), 0)
+                label = cv2.GaussianBlur(label.astype('float32'), (trace_filtering_odd, trace_filtering_odd), 0)
                 label = cv2.resize(label, (img_dims[1], img_dims[0]))
             else:
                 label = np.zeros(img_dims, dtype='float32') # set confidence map to all zeros if whisker is not in frame
@@ -78,7 +78,7 @@ with tables.open_file(file_name, 'w') as file: # open h5 file for saving all ima
                 if not (location==0).all(): # when both locations are zero it means the whisker has not been tracked
                     location = np.multiply(location, np.divide(img_dims, original_dims))
                     deltas = np.sqrt((np.power(Y-location[0],2) + np.power(X-location[1],2))) # distance of each pixel to whisker point
-                    label = np.exp(-deltas / (2*point_filtering^2))
+                    label = np.exp(-deltas / (2*int(point_filtering*scaling)^2))
                 else:
                     label = np.zeros(img_dims, dtype='float32') # set confidence map to all zeros if whisker is not in frame
                 

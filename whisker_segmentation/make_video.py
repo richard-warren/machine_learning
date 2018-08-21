@@ -42,7 +42,7 @@ for i in tqdm(range(total_frames)):
         # add predicted labels to frame
         frame_hires = frame_hires.astype('float32') / 255
 #        labeled_frame = add_labels_to_frame(frame_hires[:,:,1], prediction, range(channels))
-        labeled_frame = add_labels_to_frame(frame_hires[:,:,1], prediction, iter([1,3,5,7]))
+        labeled_frame = add_labels_to_frame(frame_hires[:,:,1], prediction, iter([1,2,4,5,7,8,10,11]), add_maxima=True)
         
         # write to video
         labeled_frame = np.clip((labeled_frame*255).astype('uint8'), 0, 255)

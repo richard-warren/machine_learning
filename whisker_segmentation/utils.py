@@ -179,7 +179,7 @@ class DataGenerator(Sequence):
 
 
 
-def add_labels_to_frame(frame, labels, channels_to_show):
+def add_labels_to_frame(frame, labels, channels_to_show, add_maxima=False):
     
     
     # get rgb values for each whisker
