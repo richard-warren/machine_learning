@@ -25,7 +25,7 @@ use_sample_weights = True
 
 # prepare_data settings
 whiskers = 4
-whisker_points = [0] # points along the whiskers to locate
+whisker_points = [0,7] # points along the whiskers to locate
 trace_filtering = 50 # sigma for whisker trace confidence maps
 point_filtering = 20 # sigma for whisker point confidence maps
 scaling = 0.25

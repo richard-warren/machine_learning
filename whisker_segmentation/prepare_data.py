@@ -37,7 +37,7 @@ if whisker_points:
 
 file_name = 'data\\scaling%.2f_points%i_tracefiltering_%i_pointfiltering%i.h5' % (scaling, len(whisker_points), trace_filtering, point_filtering)
 total_labels = whiskers+ whiskers*len(whisker_points)
-total_imgs = 1000 # uncomment to troubleshoot
+#total_imgs = 1000 # uncomment to troubleshoot
 
 
 with tables.open_file(file_name, 'w') as file: # open h5 file for saving all images and labels
