@@ -1,6 +1,6 @@
 from glob import glob
 import cv2
-from config import scaling, trace_filtering, point_filtering, whiskers, whisker_points
+from config import scaling, trace_filtering, point_filtering, whiskers, whisker_points, img_limit
 import os.path
 import numpy as np
 import tables
@@ -35,9 +35,11 @@ if whisker_points:
             
 
 
-file_name = 'data\\scaling%.2f_points%i_tracefiltering_%i_pointfiltering%i.h5' % (scaling, len(whisker_points), trace_filtering, point_filtering)
+if img_limit:
+    total_imgs = img_limit
+file_name = 'data\\scaling%.2f_points%i_tracefiltering_%i_pointfiltering%i_imgs%i.h5' % (scaling, len(whisker_points), trace_filtering, point_filtering, total_imgs)
 total_labels = whiskers+ whiskers*len(whisker_points)
-#total_imgs = 1000 # uncomment to troubleshoot
+
 
 
 with tables.open_file(file_name, 'w') as file: # open h5 file for saving all images and labels

@@ -4,6 +4,7 @@ from keras.utils import Sequence
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
+import ipdb
 
 
 
@@ -130,13 +131,16 @@ class DataGenerator(Sequence):
     # keras data generator class
     
     
-    def __init__(self, img_inds, dataset, batch_size=16, shuffle=True):
+    def __init__(self, img_inds, dataset, batch_size=16, shuffle=True, sample_weights=[]):
         # initialization
         
         self.img_inds = img_inds
         self.dataset = dataset
         self.batch_size = batch_size
         self.shuffle = shuffle
+        if not len(sample_weights):
+            sample_weights = np.ones(dataset.root.imgs.shape[0])
+        self.sample_weights = sample_weights
         
         self.img_dims = (dataset.root.imgs.shape[1], dataset.root.imgs.shape[2])
         self.channels = dataset.root.labels.shape[-1]
@@ -159,16 +163,14 @@ class DataGenerator(Sequence):
         Y = self.dataset.root.labels[batch_inds,:,:,:].astype('float32')
     
         # normalize
-        # should replace with a one liner
-#        if np.max(Y)>0:
-#            Y = Y / np.max(Y)
         for smp in range(len(batch_inds)):
             for channel in range(self.channels):
                 if np.max(Y[smp,:,:,channel])>0:
                     Y[smp,:,:,channel] = Y[smp,:,:,channel] / np.max(Y[smp,:,:,channel])            
         X = X / 255
-
-        return X, Y
+        
+#        return X, Y, np.ones(Y.shape[0])
+        return X, Y, self.sample_weights[batch_inds]
     
 
     def on_epoch_end(self):

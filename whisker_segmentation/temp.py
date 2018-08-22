@@ -1,14 +1,8 @@
 
 
+angles = np.genfromtxt(os.path.join('data','raw','frame_angles.csv'))[1:,3]
+bins = np.histogram(angles, bins=10)[0]
 
-
-locations = np.array([25, 50])
-
-label = np.empty(img_dims, dtype='float32') # set confidence map to all zeros if whisker is not in frame
-
-
-X, Y = np.meshgrid(range(img_dims[1]), range(img_dims[0]))
-temp = np.exp(-np.sqrt((np.power(Y-locations[1],2) + np.power(X-locations[0],2))) / (2*label_filtering^2))
-
-
-
+weight_lims = [.1, 10]
+weights = (1/bins) / np.mean(1/bins)
+weights = np.clip(weights, weight_lims[0], weight_lims[1])
