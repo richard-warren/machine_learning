@@ -15,7 +15,7 @@ total_imgs = len(list(glob('data\\raw\\frames\\*.png')))
 # determine target img demensions
 img_dims = cv2.imread('data\\raw\\frames\\img1.png')[:, :, 1].shape # load sample image
 img_dims = [int(dim*scaling) for dim in img_dims] # reduce by down_sampling factor
-img_dims = [dim-dim%4 for dim in img_dims] # ensure dimensions are divisble by four
+img_dims = [dim-dim%16 for dim in img_dims] # ensure dimensions are divisble by four
 
 
 

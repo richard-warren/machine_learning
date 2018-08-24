@@ -1,96 +1,8 @@
-from keras.models import Model
-from keras.layers import Input, Conv2D, Conv2DTranspose, MaxPooling2D
 from keras.utils import Sequence
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
-import ipdb
 
-
-
-def create_network(img_size, output_channels, filters=64, kernel_size=3, optimizer='adam', loss_fcn='mean_squared_error'):
-    
-    # create fully convolutional network
-
-    x_in = Input(shape=img_size)
-
-    x1 = Conv2D(filters, kernel_size=kernel_size, padding="same", activation="relu")(x_in)
-    x1 = Conv2D(filters, kernel_size=kernel_size, padding="same", activation="relu")(x1)
-    x1 = Conv2D(filters, kernel_size=kernel_size, padding="same", activation="relu")(x1)
-    x1_pool = MaxPooling2D(pool_size=2, strides=2, padding="same")(x1)
-    
-    x2 = Conv2D(filters*2, kernel_size=kernel_size, padding="same", activation="relu")(x1_pool)
-    x2 = Conv2D(filters*2, kernel_size=kernel_size, padding="same", activation="relu")(x2)
-    x2 = Conv2D(filters*2, kernel_size=kernel_size, padding="same", activation="relu")(x2)
-    x2_pool = MaxPooling2D(pool_size=2, strides=2, padding="same")(x2)
-    
-    x3 = Conv2D(filters*4, kernel_size=kernel_size, padding="same", activation="relu")(x2_pool)
-    x3 = Conv2D(filters*4, kernel_size=kernel_size, padding="same", activation="relu")(x3)
-    x3 = Conv2D(filters*4, kernel_size=kernel_size, padding="same", activation="relu")(x3)
-    
-    x4 = Conv2DTranspose(filters*2, kernel_size=3, strides=2, padding="same", activation="relu", kernel_initializer="glorot_normal")(x3)
-    x4 = Conv2D(filters*2, kernel_size=3, padding="same", activation="relu")(x4)
-    x4 = Conv2D(filters*2, kernel_size=3, padding="same", activation="relu")(x4)
-    
-    x_out = Conv2DTranspose(output_channels, kernel_size=3, strides=2, padding="same", activation="linear", kernel_initializer="glorot_normal")(x4)
-    
-    # compile
-    net = Model(inputs=x_in, outputs=x_out, name="whisker_tracer")
-    net.compile(optimizer=optimizer, loss=loss_fcn)
-    
-    # show network summary
-    net.summary()
-    
-    return net
-
-
-
-
-
-
-def create_network_deep(img_size, output_channels, filters=64, kernel_size=3, optimizer='adam', loss_fcn='mean_squared_error'):
-    
-    # create fully convolutional network
-
-    x_in = Input(shape=img_size)
-
-    x1 = Conv2D(filters, kernel_size=kernel_size, padding="same", activation="relu")(x_in)
-    x1 = Conv2D(filters, kernel_size=kernel_size, padding="same", activation="relu")(x1)
-    x1 = Conv2D(filters, kernel_size=kernel_size, padding="same", activation="relu")(x1)
-    x1_pool = MaxPooling2D(pool_size=2, strides=2, padding="same")(x1)
-    
-    x2 = Conv2D(filters*2, kernel_size=kernel_size, padding="same", activation="relu")(x1_pool)
-    x2 = Conv2D(filters*2, kernel_size=kernel_size, padding="same", activation="relu")(x2)
-    x2 = Conv2D(filters*2, kernel_size=kernel_size, padding="same", activation="relu")(x2)
-    x2_pool = MaxPooling2D(pool_size=2, strides=2, padding="same")(x2)
-    
-    x3 = Conv2D(filters*4, kernel_size=kernel_size, padding="same", activation="relu")(x2_pool)
-    x3 = Conv2D(filters*4, kernel_size=kernel_size, padding="same", activation="relu")(x3)
-    x3 = Conv2D(filters*4, kernel_size=kernel_size, padding="same", activation="relu")(x3)
-    x3_pool = MaxPooling2D(pool_size=2, strides=2, padding="same")(x3)
-    
-    x4 = Conv2D(filters*8, kernel_size=kernel_size, padding="same", activation="relu")(x3_pool)
-    x4 = Conv2D(filters*8, kernel_size=kernel_size, padding="same", activation="relu")(x4)
-    x4 = Conv2D(filters*8, kernel_size=kernel_size, padding="same", activation="relu")(x4)
-    
-    x5 = Conv2DTranspose(filters*2, kernel_size=3, strides=2, padding="same", activation="relu", kernel_initializer="glorot_normal")(x4)
-    x5 = Conv2D(filters*4, kernel_size=3, padding="same", activation="relu")(x5)
-    x5 = Conv2D(filters*4, kernel_size=3, padding="same", activation="relu")(x5)
-    
-    x6 = Conv2DTranspose(filters*2, kernel_size=3, strides=2, padding="same", activation="relu", kernel_initializer="glorot_normal")(x5)
-    x6 = Conv2D(filters*2, kernel_size=3, padding="same", activation="relu")(x6)
-    x6 = Conv2D(filters*2, kernel_size=3, padding="same", activation="relu")(x6)
-    
-    x_out = Conv2DTranspose(output_channels, kernel_size=3, strides=2, padding="same", activation="linear", kernel_initializer="glorot_normal")(x6)
-    
-    # compile
-    net = Model(inputs=x_in, outputs=x_out, name="whisker_tracer")
-    net.compile(optimizer=optimizer, loss=loss_fcn)
-    
-    # show network summary
-    net.summary()
-    
-    return net
 
 
 
@@ -131,7 +43,7 @@ class DataGenerator(Sequence):
     # keras data generator class
     
     
-    def __init__(self, img_inds, dataset, batch_size=16, shuffle=True, sample_weights=[]):
+    def __init__(self, img_inds, dataset, batch_size=16, shuffle=True, sample_weights=[], num_loss_fcns=1):
         # initialization
         
         self.img_inds = img_inds
@@ -141,6 +53,7 @@ class DataGenerator(Sequence):
         if not len(sample_weights):
             sample_weights = np.ones(dataset.root.imgs.shape[0])
         self.sample_weights = sample_weights
+        self.num_loss_fcns = num_loss_fcns
         
         self.img_dims = (dataset.root.imgs.shape[1], dataset.root.imgs.shape[2])
         self.channels = dataset.root.labels.shape[-1]
@@ -170,7 +83,7 @@ class DataGenerator(Sequence):
         X = X / 255
         
 #        return X, Y, np.ones(Y.shape[0])
-        return X, Y, self.sample_weights[batch_inds]
+        return X, [Y for _ in range(self.num_loss_fcns)], [self.sample_weights[batch_inds] for _ in range(self.num_loss_fcns)] # return same Y and smp_weights multiple times if using intermediate supervision
     
 
     def on_epoch_end(self):

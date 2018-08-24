@@ -1,17 +1,22 @@
 '''
 TO DO:
-*get sample weighted training working
-*make distance loss function for whisker points
+***think hard about training set
+*make distance loss function for whisker points, scaled by input image size
+*lock in test, train sets
+retry networks with pimped out loss functions
+save training history
+
+try normalizing distribution by removing samples rather than sample weighting
 data augmentation
 plot rmse as function of whisker angle...
 add maxima to prediction images
-look into and try different network architectures (leap alternatives, understand location refinement in dlc)
 try sigmoid cross entropy loss to force one whisker per location
 extra output to regress onto whisker points
 '''
 
 # training settings
-dataset_name = 'scaling0.25_points2_tracefiltering_25_pointfiltering5_imgs9238'
+dataset_name = 'scaling0.25_points2_tracefiltering_25_pointfiltering5_imgs1000'
+network_structure = 'stacked_hourglass' # leap, hourglass, or stacked_hourglass
 use_cpu = False
 test_set_portion = .1
 lr_init = .001
@@ -29,7 +34,7 @@ whisker_points = [0,7] # points along the whiskers to locate
 trace_filtering = 25 # sigma for whisker trace confidence maps
 point_filtering = 5 # sigma for whisker point confidence maps
 scaling = 0.25
-img_limit = 2000
+img_limit = False
 
 
 # make_video and evaluate model settings

@@ -1,4 +1,5 @@
-from utils import create_network, DataGenerator
+from utils import DataGenerator
+from models import models_dict
 from evaluate_model import create_prediction_images
 from keras.optimizers import Adam
 from keras.models import load_model
@@ -9,7 +10,7 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint
 import losswise
 from losswise.libs import LosswiseKerasCallback
 import tables
-from config import test_set_portion, dataset_name, lr_init, first_layer_filters, batch_size, use_cpu, training_epochs, kernel_size, use_sample_weights, sample_weight_lims
+from config import test_set_portion, dataset_name, lr_init, first_layer_filters, batch_size, use_cpu, training_epochs, kernel_size, use_sample_weights, sample_weight_lims, network_structure
 from datetime import datetime
 import os
 from glob import glob
@@ -42,12 +43,16 @@ with tables.open_file(os.path.join('data',dataset_name+'.h5'), 'r') as dataset:
 
 
     # create model and data generators
-    train_generator = DataGenerator(train_inds, dataset, batch_size=batch_size, shuffle=True, sample_weights=sample_weights)
-    test_generator = DataGenerator(test_inds, dataset, batch_size=batch_size, shuffle=False, sample_weights=sample_weights)
-    model = create_network((train_generator.img_dims[0], train_generator.img_dims[1], 1), train_generator.channels, first_layer_filters, 
-                           kernel_size = kernel_size,
-                           optimizer = Adam(lr=lr_init),
-                           loss_fcn = 'mean_squared_error')
+    train_generator = DataGenerator(train_inds, dataset, batch_size=batch_size, shuffle=True, sample_weights=sample_weights, 
+                                    num_loss_fcns=2 if network_structure=='stacked_hourglass' else 1)
+    test_generator = DataGenerator(test_inds, dataset, batch_size=batch_size, shuffle=False, sample_weights=sample_weights, 
+                                   num_loss_fcns=2 if network_structure=='stacked_hourglass' else 1)
+    
+
+    model = models_dict(network_structure)((train_generator.img_dims[0], train_generator.img_dims[1], 1), train_generator.channels, first_layer_filters, 
+                                           kernel_size = kernel_size,
+                                           optimizer = Adam(lr=lr_init),
+                                           loss_fcn = 'mean_squared_error')
 
     # train, omg!
     if use_cpu:
@@ -59,11 +64,11 @@ with tables.open_file(os.path.join('data',dataset_name+'.h5'), 'r') as dataset:
     model_path = os.path.join('models',model_folder)
     os.makedirs(model_path)
     callbacks = [EarlyStopping(patience=10, verbose=1), # stop when validation loss stops increasing
-               ModelCheckpoint(os.path.join(model_path, 'filters%i_kern%i_weights.{epoch:02d}-{val_loss:.6f}.hdf5'%(first_layer_filters, kernel_size)), save_best_only=True), # save models periodically
+               ModelCheckpoint(os.path.join(model_path, '%s_filters%i_kern%i_weights.{epoch:02d}-{val_loss:.6f}.hdf5'%(model.name, first_layer_filters, kernel_size)), save_best_only=True), # save models periodically
                LosswiseKerasCallback(tag='giterdone')] # show progress on losswise.com
     model.fit_generator(generator=train_generator, validation_data=test_generator, epochs=training_epochs, callbacks=callbacks)
     
-    # load best model and remove all others
+    # load best model and delete others
     models_to_delete = glob(os.path.join(model_path,'*hdf5'))[:-1]
     [os.remove(mod) for mod in iter(models_to_delete)]
     model = load_model(glob(os.path.join(model_path, '*.hdf5'))[0])
@@ -76,8 +81,13 @@ with tables.open_file(os.path.join('data',dataset_name+'.h5'), 'r') as dataset:
     Y_test = np.empty((test_batches*batch_size, train_generator.img_dims[0], train_generator.img_dims[1], train_generator.channels), dtype='float32')
     for i in range(test_batches):
         inds = np.arange((i)*batch_size, (i+1)*batch_size)
-        X_test[inds], Y_test[inds], weights = test_generator[i]
-    predictions_test = model.predict_generator(test_generator)
+        if network_structure=='stacked_hourglass':
+            X_test[inds], _, weights = test_generator[i]
+            Y_test[inds] = _[1]
+            predictions_test = model.predict_generator(test_generator)[1]
+        else:
+            X_test[inds], Y_test[inds], weights = test_generator[i]
+            predictions_test = model.predict_generator(test_generator)
     
     # save to h5 file
     with tables.open_file(os.path.join(model_path,'predictions.h5'), 'w') as file: # open h5 file for saving test images and labels
