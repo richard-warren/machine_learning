@@ -1,6 +1,6 @@
 from utils import DataGenerator
 from models import models_dict
-from evaluate_model import create_prediction_images
+from evaluate_model import evaluate_model
 from keras.optimizers import Adam
 from keras.models import load_model
 import numpy as np
@@ -13,6 +13,7 @@ import tables
 from config import test_set_portion, dataset_name, lr_init, first_layer_filters, batch_size, use_cpu, training_epochs, kernel_size, use_sample_weights, sample_weight_lims, network_structure
 from datetime import datetime
 import os
+import pickle
 from glob import glob
 
 losswise.set_api_key('9BDAXRBWA') # set up losswise.com visualization
@@ -61,12 +62,14 @@ with tables.open_file(os.path.join('data',dataset_name+'.h5'), 'r') as dataset:
         K.set_session(sess)
         
     model_folder = datetime.now().strftime('%y%m%d_%H.%M.%S')
-    model_path = os.path.join('models',model_folder)
+    model_path = os.path.join('models', model_folder)
     os.makedirs(model_path)
     callbacks = [EarlyStopping(patience=10, verbose=1), # stop when validation loss stops increasing
-               ModelCheckpoint(os.path.join(model_path, '%s_filters%i_kern%i_weights.{epoch:02d}-{val_loss:.6f}.hdf5'%(model.name, first_layer_filters, kernel_size)), save_best_only=True), # save models periodically
+               ModelCheckpoint(os.path.join(model_path, '%s_filters%i_kern%i_sampleweights%s_weights.{epoch:02d}-{val_loss:.6f}.hdf5'%(model.name, first_layer_filters, kernel_size, 'ON' if use_sample_weights else 'OFF')), save_best_only=True), # save models periodically
                LosswiseKerasCallback(tag='giterdone')] # show progress on losswise.com
-    model.fit_generator(generator=train_generator, validation_data=test_generator, epochs=training_epochs, callbacks=callbacks)
+    history = model.fit_generator(generator=train_generator, validation_data=test_generator, epochs=training_epochs, callbacks=callbacks)
+    with open(os.path.join(model_path, 'training_history'), 'wb') as training_file:
+        pickle.dump(history.history, training_file)
     
     # load best model and delete others
     models_to_delete = glob(os.path.join(model_path,'*hdf5'))[:-1]
@@ -95,8 +98,17 @@ with tables.open_file(os.path.join('data',dataset_name+'.h5'), 'r') as dataset:
         file.create_array(file.root, 'labels', Y_test)
         file.create_array(file.root, 'predictions', predictions_test)
         file.create_array(file.root, 'test_set_imgs_ids', [ind+1 for ind in test_inds])
+        
+        # copy metadata from training set - is there a way to do this more elegantly?
+        file.create_array(file.root, 'whiskers', np.array(dataset.root.whiskers))
+        file.create_array(file.root, 'original_dims', np.array(dataset.root.original_dims[test_inds,:]))
+        if dataset.root.labels.shape[-1]>dataset.root.whiskers: # if there are more channels than whiskers, it means there are some channels trakcing whisker points
+            file.create_array(file.root, 'original_point_coordinates', np.array(dataset.root.original_point_coordinates[test_inds,:,:]))
+            file.create_array(file.root, 'downsampled_point_coordinates', np.array(dataset.root.downsampled_point_coordinates[test_inds,:,:]))
+            
     
-    # generate images from the predictions
-    create_prediction_images(model_folder)
-
+# evaluate model
+point_distances = evaluate_model(model_folder, write_imgs=True)
+np.save(os.path.join(model_path,'pix_diffs(mean%.3f)' % np.nanmean(point_distances)), point_distances)
+print('mean pixel differnce: %.3f' % np.nanmean(point_distances))
 

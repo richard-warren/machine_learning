@@ -122,10 +122,6 @@ def add_labels_to_frame(frame, labels, channels_to_show, add_maxima=False):
     merged = np.clip(cv2.addWeighted(colored_labels, 1.0, frame, 1.0, 0), 0, 1) # overlay raw image
     
     return merged
-        
-
-
-
 
 
 

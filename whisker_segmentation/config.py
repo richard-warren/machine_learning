@@ -1,9 +1,8 @@
 '''
 TO DO:
-***think hard about training set
-*make distance loss function for whisker points, scaled by input image size
+*improve training set, or skip frames with missing labels?
 *lock in test, train sets
-retry networks with pimped out loss functions
+better way to store metadata - ask chris about this
 save training history
 
 try normalizing distribution by removing samples rather than sample weighting
@@ -15,14 +14,14 @@ extra output to regress onto whisker points
 '''
 
 # training settings
-dataset_name = 'scaling0.25_points2_tracefiltering_25_pointfiltering5_imgs1000'
-network_structure = 'stacked_hourglass' # leap, hourglass, or stacked_hourglass
+dataset_name = 'scaling0.25_points2_tracefiltering_25_pointfiltering5_imgs9238'
+network_structure = 'leap' # leap, hourglass, or stacked_hourglass
 use_cpu = False
 test_set_portion = .1
 lr_init = .001
 batch_size = 32
 kernel_size = 5
-training_epochs = 100 
+training_epochs = 100
 first_layer_filters = 16 # 32 seemed to overfit, 8 seemed to underfit
 use_sample_weights = True
 sample_weight_lims = [.1, 10]
