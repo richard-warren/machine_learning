@@ -1,5 +1,6 @@
 '''
 TO DO:
+***add points to whisker vid
 *improve training set, or skip frames with missing labels?
 *lock in test, train sets
 better way to store metadata - ask chris about this
@@ -15,14 +16,14 @@ extra output to regress onto whisker points
 
 # training settings
 dataset_name = 'scaling0.25_points2_tracefiltering_25_pointfiltering5_imgs9238'
-network_structure = 'leap' # leap, hourglass, or stacked_hourglass
+network_structure = 'stacked_hourglass' # leap, hourglass, or stacked_hourglass
 use_cpu = False
 test_set_portion = .1
 lr_init = .001
 batch_size = 32
 kernel_size = 5
 training_epochs = 100
-first_layer_filters = 16 # 32 seemed to overfit, 8 seemed to underfit
+first_layer_filters = 32 # for leap 32 seemed to overfit, 8 seemed to underfit
 use_sample_weights = True
 sample_weight_lims = [.1, 10]
 
@@ -37,5 +38,5 @@ img_limit = False
 
 
 # make_video and evaluate model settings
-model_folder = '180820_18.55.11'
+model_folder = '180826_19.08.52'
 vid_name = '180118_KM131.mkv'

@@ -1,17 +1,19 @@
 import cv2
 from keras.models import load_model
-from config import model_name, vid_name
+from config import model_folder, vid_name
 import os
 from utils import add_labels_to_frame
 import numpy as np
 from tqdm import tqdm
+from glob import glob
 
 
 
 # load model
-model = load_model('models\\'+model_name)
+model = load_model(glob(os.path.join('models', model_folder, '*.hdf5'))[0])
 model_dims = model.layers[0].input_shape[2:0:-1] # width X height
-channels = model.output_shape[-1]
+multi_output = len(model.outputs)>1
+channels = model.output_shape[-1][-1] if multi_output else model.output_shape[-1]
 
 # create vid reader and writer
 vid_read = cv2.VideoCapture('videos\\'+vid_name)
@@ -37,12 +39,11 @@ for i in tqdm(range(total_frames)):
         frame = cv2.erode(frame_hires, min_filter_kernel)
         frame = cv2.resize(frame, model_dims)[:,:,1]
         frame = frame.astype('float32') / 255
-        prediction = model.predict(frame[None,:,:,None])[0,:,:,:]
+        prediction = model.predict(frame[None,:,:,None])[-1][0,:,:,:] if multi_output else model.predict(frame[None,:,:,None])[0,:,:,:]
         
         # add predicted labels to frame
         frame_hires = frame_hires.astype('float32') / 255
-#        labeled_frame = add_labels_to_frame(frame_hires[:,:,1], prediction, range(channels))
-        labeled_frame = add_labels_to_frame(frame_hires[:,:,1], prediction, iter([1,2,4,5,7,8,10,11]), add_maxima=True)
+        labeled_frame = add_labels_to_frame(frame_hires[:,:,1], prediction, range(channels))
         
         # write to video
         labeled_frame = np.clip((labeled_frame*255).astype('uint8'), 0, 255)
