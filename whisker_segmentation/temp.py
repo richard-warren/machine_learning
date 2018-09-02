@@ -1,8 +1,16 @@
+import matplotlib.pyplot as plt
 
 
-angles = np.genfromtxt(os.path.join('data','raw','frame_angles.csv'))[1:,3]
-bins = np.histogram(angles, bins=10)[0]
+plt.ioff() # turn off interactive mode to prevent figures from displaying
+x, y = (50,100)
 
-weight_lims = [.1, 10]
-weights = (1/bins) / np.mean(1/bins)
-weights = np.clip(weights, weight_lims[0], weight_lims[1])
+fig = plt.figure(frameon=False)
+plt.imshow(frame, 'gray')
+plt.axis('off')
+plt.plot(x, y, 'o', ms=10, alpha=0.8, color=(1,0,0))
+fig.canvas.draw()
+
+data = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8, sep='')
+w, h = fig.canvas.get_width_height()
+data = data.reshape((h, w, 3))
+plt.show()
