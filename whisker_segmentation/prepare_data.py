@@ -44,8 +44,23 @@ total_labels = whiskers+ whiskers*len(whisker_points)
 
 with tables.open_file(file_name, 'w') as file: # open h5 file for saving all images and labels
     
-    file.create_array(file.root, 'imgs', np.empty((total_imgs, img_dims[0], img_dims[1], 1), dtype='uint8'))
-    file.create_array(file.root, 'labels', np.empty((total_imgs, img_dims[0], img_dims[1], total_labels), dtype='float32'))
+    file.create_earray(file.root, 'imgs',
+                       atom = tables.UInt8Atom(),
+                       shape = (0, img_dims[0], img_dims[1], 1),
+                       chunkshape=(1, img_dims[0], img_dims[1], 1))
+    
+    file.create_earray(file.root, 'labels',
+                       atom = tables.UInt8Atom(),
+                       shape = (0, img_dims[0], img_dims[1], total_labels),
+                       chunkshape=(1, img_dims[0], img_dims[1], 1))
+    
+#    file.create_carray(file.root, 'imgs', 
+#                       obj = np.empty((total_imgs, img_dims[0], img_dims[1], 1), dtype='uint8'),
+#                       chunkshape=(1, img_dims[0], img_dims[1], 1))
+#    file.create_carray(file.root, 'labels', 
+#                       obj = np.empty((total_imgs, img_dims[0], img_dims[1], total_labels), dtype='uint8'),
+#                       chunkshape=(1, img_dims[0], img_dims[1], 1))
+#    
     file.create_array(file.root, 'whiskers', np.array([whiskers], dtype='uint8'))
     file.create_array(file.root, 'original_dims', np.empty((total_imgs,2), dtype='uint16')) # record dimensions input image before down-sampling
     if whisker_points:
@@ -60,11 +75,12 @@ with tables.open_file(file_name, 'w') as file: # open h5 file for saving all ima
         img = cv2.imread('data\\raw\\frames\\img%i.png' % (i+1))[:,:,1]
         file.root.original_dims[i,:] = img.shape
         file.root.downsampled_point_coordinates[i] = file.root.original_point_coordinates[i] * (np.divide(img_dims,img.shape))
+        img_labels = np.zeros((1,img_dims[0], img_dims[1], total_labels), dtype='uint8')
         
         # resize
         img = cv2.erode(img, min_filter_kernel)
         img = cv2.resize(img, (img_dims[1], img_dims[0]))
-        file.root.imgs[i] = img[:,:,None]
+        file.root.imgs.append(img[None,:,:,None])
         
         # load labels
         for j in range(whiskers):
@@ -76,9 +92,10 @@ with tables.open_file(file_name, 'w') as file: # open h5 file for saving all ima
                 original_dims = list(label.shape)
                 label = cv2.GaussianBlur(label.astype('float32'), (trace_filtering_odd, trace_filtering_odd), 0)
                 label = cv2.resize(label, (img_dims[1], img_dims[0]))
+                label = (label * (255/np.max(label)))
             else:
-                label = np.zeros(img_dims, dtype='float32') # set confidence map to all zeros if whisker is not in frame
-            file.root.labels[i,:,:,j] = label
+                label = np.zeros(img_dims, dtype='uint8') # set confidence map to all zeros if whisker is not in frame
+            img_labels[0,:,:,j] = label.astype('uint8')
             
             # create confidence maps for points along whisker
             for k, whisker in enumerate(whisker_points):
@@ -88,8 +105,11 @@ with tables.open_file(file_name, 'w') as file: # open h5 file for saving all ima
                     location = np.multiply(location, np.divide(img_dims, original_dims))
                     deltas = np.sqrt((np.power(Y-location[0],2) + np.power(X-location[1],2))) # distance of each pixel to whisker point
                     label = np.exp(-deltas / (2*np.power((point_filtering*scaling),2)))
+                    label = (label * (255/np.max(label)))
                 else:
-                    label = np.zeros(img_dims, dtype='float32') # set confidence map to all zeros if whisker is not in frame
+                    label = np.zeros(img_dims, dtype='uint8') # set confidence map to all zeros if whisker is not in frame
                 
-                file.root.labels[i,:,:,whiskers+j*len(whisker_points)+k] = label
+                img_labels[0,:,:,whiskers+j*len(whisker_points)+k] = label.astype('uint8')
+            
+            file.root.labels.append(img_labels)
 

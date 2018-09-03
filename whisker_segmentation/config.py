@@ -35,8 +35,8 @@ whiskers = 4
 whisker_points = list(range(8)) # points along the whiskers to locate // [0,7]
 trace_filtering = 25 # sigma for whisker trace confidence maps
 point_filtering = 5 # sigma for whisker point confidence maps
-scaling = 1.0
-img_limit = 1000
+scaling = 0.5
+img_limit = False
 
 
 # make_video and evaluate model settings
