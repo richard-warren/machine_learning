@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 import ipdb as ipdb
+import time
 
 
 
@@ -71,6 +72,7 @@ class DataGenerator(Sequence):
         # gets data for batch
         
         # get data from h5 file
+#        t = time.time()
         batch_inds = self.img_inds[index*self.batch_size : (index+1)*self.batch_size]
         X = self.dataset.root.imgs[batch_inds,:,:,:].astype('float32')
         Y = self.dataset.root.labels[batch_inds,:,:,:].astype('float32')
@@ -83,6 +85,7 @@ class DataGenerator(Sequence):
         X = X / 255
         
 #        return X, Y, np.ones(Y.shape[0])
+#        print('get batch time: %.2f' % (time.time()-t))
         return X, [Y for _ in range(self.num_loss_fcns)], [self.sample_weights[batch_inds] for _ in range(self.num_loss_fcns)] # return same Y and smp_weights multiple times if using intermediate supervision
     
 
@@ -100,7 +103,7 @@ def add_labels_to_frame(frame, labels, channels_to_show, whiskers=4):
     # get rgb values for each whisker
     channels = labels.shape[-1]
     cmap = plt.cm.jet
-    colors = np.zeros((channels,3), dtype='float32')
+    colors = np.zeros((whiskers,3), dtype='float32')
     color_inds = np.linspace(0,1,whiskers) # not really inds, but evenly spaced values between zero and one
     for channel in range(whiskers):
         colors[channel,:] = cmap(color_inds[channel])[0:3]
@@ -108,20 +111,20 @@ def add_labels_to_frame(frame, labels, channels_to_show, whiskers=4):
     channel_color_inds = np.concatenate((np.arange(whiskers), np.repeat(list(range(whiskers)),points))) # e.g. with three whiskers and two points per whisker: [0 1 2 0 0 1 1 2 2]
                 
     # get colored labels
-    colored_labels = np.empty(((labels.shape[0], labels.shape[1], 3, channels)), dtype='float32')
+    colored_labels = np.zeros((labels.shape[0], labels.shape[1], 3, channels), dtype='uint8')
     for channel in channels_to_show:
-            colored_labels[:,:,:,channel] =  np.repeat(labels[:,:,channel,None], 3, axis=2) * colors[channel_color_inds[channel],:]
+            colored_labels[:,:,:,channel] =  np.multiply(np.repeat(labels[:,:,channel,None], 3, axis=2), colors[channel_color_inds[channel],:])
     colored_labels = np.mean(colored_labels, axis=3) # collapse across all colors
     if np.max(colored_labels)>0:
-        colored_labels = colored_labels / np.max(colored_labels)
-    
+        colored_labels = colored_labels * (255/np.max(colored_labels))
+#    ipdb.set_trace()
     # upsample labels if necessary
     if not frame.shape==labels.shape:
         colored_labels = cv2.resize(colored_labels, (frame.shape[1], frame.shape[0]))
         
     # merge frame with colored labels
     frame = np.repeat(frame[:,:,None], 3, axis=2) # add color dimension to frame
-    merged = np.clip(cv2.addWeighted(colored_labels, 1.0, frame, 1.0, 0), 0, 1) # overlay raw image
+    merged = np.clip(cv2.addWeighted(colored_labels.astype('uint8'), 1.0, frame, 1.0, 0), 0, 255) # overlay raw image
     
     return merged
 

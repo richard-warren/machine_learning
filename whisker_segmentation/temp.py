@@ -1,16 +1,10 @@
-import matplotlib.pyplot as plt
 
 
-plt.ioff() # turn off interactive mode to prevent figures from displaying
-x, y = (50,100)
+img_num = 0
 
-fig = plt.figure(frameon=False)
-plt.imshow(frame, 'gray')
-plt.axis('off')
-plt.plot(x, y, 'o', ms=10, alpha=0.8, color=(1,0,0))
-fig.canvas.draw()
+frame = file.root.imgs[img_num,:,:,0]
+labels = file.root.labels[img_num,:,:,:]
 
-data = np.fromstring(fig.canvas.tostring_rgb(), dtype=np.uint8, sep='')
-w, h = fig.canvas.get_width_height()
-data = data.reshape((h, w, 3))
-plt.show()
+from utils import add_labels_to_frame
+labelled = add_labels_to_frame(frame, labels, iter([16]), whiskers=4)
+plt.imshow(labelled)

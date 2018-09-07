@@ -66,7 +66,7 @@ with tables.open_file(os.path.join('data',dataset_name+'.h5'), 'r') as dataset:
     os.makedirs(model_path)
     callbacks = [EarlyStopping(patience=10, verbose=1), # stop when validation loss stops increasing
                ModelCheckpoint(os.path.join(model_path, '%s_filters%i_kern%i_sampleweights%s_weights.{epoch:02d}-{val_loss:.6f}.hdf5'%(model.name, first_layer_filters, kernel_size, 'ON' if use_sample_weights else 'OFF')), save_best_only=True), # save models periodically
-               LosswiseKerasCallback(tag='giterdone')] # show progress on losswise.com
+               LosswiseKerasCallback(tag='giterdone', display_interval=1)] # show progress on losswise.com
     history = model.fit_generator(generator=train_generator, validation_data=test_generator, epochs=training_epochs, callbacks=callbacks)
     with open(os.path.join(model_path, 'training_history'), 'wb') as training_file:
         pickle.dump(history.history, training_file)
