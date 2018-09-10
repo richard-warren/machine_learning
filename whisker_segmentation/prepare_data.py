@@ -36,7 +36,6 @@ if whisker_points:
             point_locations[:, whisker, point_ind, :] = np.genfromtxt('data/raw/C%i_%i.csv' % (whisker, point))[1:total_imgs+1,:] # skip first row in spreadsheet, which contains column headings
 
 
-
 file_name = 'data\\scaling%.2f_traces%s_points%i_tracefiltering_%i_pointfiltering%i_imgs%i.h5' % (scaling, 'True' if whisker_traces else 'False', len(whisker_points), trace_filtering, point_filtering, total_imgs)
 total_labels = whiskers*whisker_traces + whiskers*len(whisker_points)
 
@@ -50,26 +49,7 @@ with tables.open_file(file_name, 'w') as file: # open h5 file for saving all ima
     
     file.create_array(file.root, 'labels',
                        atom = tables.UInt8Atom(),
-                       shape = (total_imgs, img_dims[0], img_dims[1], total_labels),)
-    
-#    file.create_carray(file.root, 'imgs',
-#                       atom = tables.UInt8Atom(),
-#                       shape = (total_imgs, img_dims[0], img_dims[1], 1))
-#    
-#    file.create_carray(file.root, 'labels',
-#                       atom = tables.UInt8Atom(),
-#                       shape = (total_imgs, img_dims[0], img_dims[1], total_labels))
-    
-#    file.create_earray(file.root, 'imgs',
-#                       atom = tables.UInt8Atom(),
-#                       shape = (0, img_dims[0], img_dims[1], 1),
-#                       chunkshape=(1, img_dims[0], img_dims[1], 1))
-#    
-#    file.create_earray(file.root, 'labels',
-#                       atom = tables.UInt8Atom(),
-#                       shape = (0, img_dims[0], img_dims[1], total_labels),
-#                       chunkshape=(1, img_dims[0], img_dims[1], 1))
-    
+                       shape = (total_imgs, img_dims[0], img_dims[1], total_labels))
     
     file.create_array(file.root, 'whiskers', np.array([whiskers], dtype='uint8'))
     file.create_array(file.root, 'original_dims', np.empty((total_imgs,2), dtype='uint16')) # record dimensions input image before down-sampling

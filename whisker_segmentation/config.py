@@ -18,27 +18,27 @@ extra output to regress onto whisker points
 '''
 
 # training settings
-dataset_name = 'scaling0.25_tracesTrue_points0_tracefiltering_25_pointfiltering5_imgs9238'
-network_structure = 'leap' # leap, hourglass, or stacked_hourglass
+dataset_name = 'scaling0.50_tracesTrue_points8_tracefiltering_25_pointfiltering5_imgs9238'
+network_structure = 'hourglass' # leap, hourglass, or stacked_hourglass
 use_cpu = False
 test_set_portion = .1
 lr_init = .001
 batch_size = 16
 kernel_size = 5
-training_epochs = 100
-first_layer_filters = 16 # for leap 32 seemed to overfit, 8 seemed to underfit
-use_sample_weights = True
+training_epochs = 1
+first_layer_filters = 32 # for leap only 8 is workin now for some reason - 16 used to work // 
+use_sample_weights = False
 sample_weight_lims = [.1, 10]
 
 
 # prepare_data settings
 img_limit = False
 whiskers = 4
-whisker_traces = False
+whisker_traces = True
 whisker_points = list(range(8)) # points along the whiskers to locate // [0,7]
 trace_filtering = 25 # sigma for whisker trace confidence maps
 point_filtering = 5 # sigma for whisker point confidence maps
-scaling = 1.0
+scaling = 0.5
 
 
 

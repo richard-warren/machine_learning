@@ -15,6 +15,7 @@ from datetime import datetime
 import os
 import pickle
 from glob import glob
+from tqdm import tqdm
 
 losswise.set_api_key('9BDAXRBWA') # set up losswise.com visualization
 
@@ -60,7 +61,7 @@ with tables.open_file(os.path.join('data',dataset_name+'.h5'), 'r') as dataset:
         config = tf.ConfigProto(device_count={'GPU':0})
         sess = tf.Session(config=config)
         K.set_session(sess)
-        
+         
     model_folder = datetime.now().strftime('%y%m%d_%H.%M.%S')
     model_path = os.path.join('models', model_folder)
     os.makedirs(model_path)
@@ -78,26 +79,34 @@ with tables.open_file(os.path.join('data',dataset_name+'.h5'), 'r') as dataset:
     
     
         
-    # get X, Y, and predictions for test set
+    # get predictions for test set
+    print('generating test set predictions...')
     test_batches = len(test_generator)
-    X_test = np.empty((test_batches*batch_size, train_generator.img_dims[0], train_generator.img_dims[1], 1), dtype='float32')
-    Y_test = np.empty((test_batches*batch_size, train_generator.img_dims[0], train_generator.img_dims[1], train_generator.channels), dtype='float32')
-    for i in range(test_batches):
-        inds = np.arange((i)*batch_size, (i+1)*batch_size)
-        if network_structure=='stacked_hourglass':
-            X_test[inds], _, weights = test_generator[i]
-            Y_test[inds] = _[1]
-            predictions_test = model.predict_generator(test_generator)[1]
-        else:
-            X_test[inds], Y_test[inds], weights = test_generator[i]
-            predictions_test = model.predict_generator(test_generator)
-    
-    # save to h5 file
+
     with tables.open_file(os.path.join(model_path,'predictions.h5'), 'w') as file: # open h5 file for saving test images and labels
-        file.create_array(file.root, 'imgs', X_test)
-        file.create_array(file.root, 'labels', Y_test)
-        file.create_array(file.root, 'predictions', predictions_test)
+        file.create_array(file.root, 'imgs',
+                          atom = tables.Float32Atom(),
+                          shape = (test_batches*batch_size, train_generator.img_dims[0], train_generator.img_dims[1], 1))
+        file.create_array(file.root, 'labels',
+                          atom = tables.Float32Atom(),
+                          shape = (test_batches*batch_size, train_generator.img_dims[0], train_generator.img_dims[1], train_generator.channels))
+        file.create_array(file.root, 'predictions',
+                          atom = tables.Float32Atom(),
+                          shape = (test_batches*batch_size, train_generator.img_dims[0], train_generator.img_dims[1], train_generator.channels))
         file.create_array(file.root, 'test_set_imgs_ids', [ind+1 for ind in test_inds])
+        
+        # save test set data and predictions
+        for i in tqdm(range(test_batches)):
+            if network_structure=='stacked_hourglass':
+                imgs, _, weights = test_generator[i]
+                file.root.imgs[i*batch_size:(i+1)*batch_size] = imgs
+                file.root.labels[i*batch_size:(i+1)*batch_size] = _[1]
+                _ = model.predict(imgs)
+                file.root.predictions[i*batch_size:(i+1)*batch_size] = _[1]
+            else:
+                imgs, file.root.labels[i*batch_size:(i+1)*batch_size], weights = test_generator[i]
+                file.root.imgs[i*batch_size:(i+1)*batch_size] = imgs
+                file.root.predictions[i*batch_size:(i+1)*batch_size] = model.predict(imgs)
         
         # copy metadata from training set - is there a way to do this more elegantly?
         file.create_array(file.root, 'whiskers', np.array(dataset.root.whiskers))

@@ -82,11 +82,13 @@ class DataGenerator(Sequence):
             for channel in range(self.channels):
                 if np.max(Y[smp,:,:,channel])>0:
                     Y[smp,:,:,channel] = Y[smp,:,:,channel] / np.max(Y[smp,:,:,channel])            
-        X = X / 255
+        X = X / 255.
         
-#        return X, Y, np.ones(Y.shape[0])
 #        print('get batch time: %.2f' % (time.time()-t))
-        return X, [Y for _ in range(self.num_loss_fcns)], [self.sample_weights[batch_inds] for _ in range(self.num_loss_fcns)] # return same Y and smp_weights multiple times if using intermediate supervision
+        if self.num_loss_fcns==1:
+            return X, Y, self.sample_weights[batch_inds]
+        else:
+            return X, [Y for _ in range(self.num_loss_fcns)], [self.sample_weights[batch_inds] for _ in range(self.num_loss_fcns)] # return same Y and smp_weights multiple times if using intermediate supervision            
     
 
     def on_epoch_end(self):
@@ -97,8 +99,12 @@ class DataGenerator(Sequence):
 
 
 
-def add_labels_to_frame(frame, labels, channels_to_show, whiskers=4):
+def add_labels_to_frame(frame, labels, channels_to_show, whiskers=4, data_max = 255):
     
+    
+    # cast to float32
+    frame = frame.astype('float32')
+    labels = labels.astype('float32')
     
     # get rgb values for each whisker
     channels = labels.shape[-1]
@@ -111,20 +117,20 @@ def add_labels_to_frame(frame, labels, channels_to_show, whiskers=4):
     channel_color_inds = np.concatenate((np.arange(whiskers), np.repeat(list(range(whiskers)),points))) # e.g. with three whiskers and two points per whisker: [0 1 2 0 0 1 1 2 2]
                 
     # get colored labels
-    colored_labels = np.zeros((labels.shape[0], labels.shape[1], 3, channels), dtype='uint8')
+    colored_labels = np.zeros((labels.shape[0], labels.shape[1], 3, channels), dtype='float32')
     for channel in channels_to_show:
             colored_labels[:,:,:,channel] =  np.multiply(np.repeat(labels[:,:,channel,None], 3, axis=2), colors[channel_color_inds[channel],:])
     colored_labels = np.mean(colored_labels, axis=3) # collapse across all colors
     if np.max(colored_labels)>0:
-        colored_labels = colored_labels * (255/np.max(colored_labels))
-#    ipdb.set_trace()
+        colored_labels = colored_labels * (data_max/np.max(colored_labels))
+
     # upsample labels if necessary
     if not frame.shape==labels.shape:
         colored_labels = cv2.resize(colored_labels, (frame.shape[1], frame.shape[0]))
         
     # merge frame with colored labels
     frame = np.repeat(frame[:,:,None], 3, axis=2) # add color dimension to frame
-    merged = np.clip(cv2.addWeighted(colored_labels.astype('uint8'), 1.0, frame, 1.0, 0), 0, 255) # overlay raw image
+    merged = np.clip(cv2.addWeighted(colored_labels.astype('float32'), 1.0, frame, 1.0, 0), 0, data_max) # overlay raw image
     
     return merged
 
