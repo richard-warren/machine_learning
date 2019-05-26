@@ -25,7 +25,10 @@ test_set_portion = .1
 lr_init = .001
 batch_size = 16
 kernel_size = 5
-training_epochs = 1
+
+
+asdfasdfasdfasdf
+training_epochs = 50
 first_layer_filters = 32 # for leap only 8 is workin now for some reason - 16 used to work // 
 use_sample_weights = False
 sample_weight_lims = [.1, 10]
