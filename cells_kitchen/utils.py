@@ -86,20 +86,3 @@ def scale_img(img, min_val=0, max_val=1):
     return (img - np.min(img)) / np.ptp(img.flatten())
 
 
-## get summary images
-folder = "F:\\cells_kitchen_files\\datasets\\images_YST\\"
-img_stack = get_frames(folder, 1500, contiguous=False)
-
-img_corr = get_correlation_image(img_stack)
-img_median = np.median(img_stack, 0)
-img_max = img_stack.max(0)
-img_std = scale_img(img_stack.std(0))
-
-## correlation image
-
-mosaic = np.concatenate((img_corr, img_median, img_max, img_std), 1)
-plt.imshow(mosaic)
-plt.show()
-
-
-
