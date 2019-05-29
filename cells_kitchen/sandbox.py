@@ -9,12 +9,12 @@ vid_num = 0
 preview_vid(prefix+suffixes[vid_num], frames_to_show=50, fps=100)
 
 ## show summary and target images for vid
-vid_num = 0
-frames = 1000
+vid_num = 2
+frames = 500
 
 # get summary images
 img_stack = get_frames(prefix+suffixes[vid_num], frames, contiguous=False)
-##
+#
 img_corr = get_correlation_image(img_stack)
 img_mean = scale_img(np.mean(img_stack, 0))
 img_max = scale_img(img_stack.max(0))
@@ -26,8 +26,8 @@ summaries = (img_corr, img_mean, img_max, img_std)
     get_masks(labels_folder+suffixes[vid_num], collapse_masks=True, centroid_radius=3)
 targets = (masks_soma, masks_border, masks_centroids)
 
-## add label borders
-border_color = (1, 0, 0)
+# add label borders
+border_color = (.5, 0, 0)
 summaries_border = [add_contours(x, masks_border, color=border_color) for x in summaries]
 
 # display those guys

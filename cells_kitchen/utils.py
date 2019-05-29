@@ -92,7 +92,7 @@ def scale_img(img):
     return (img - np.min(img.flatten())) / np.ptp(img.flatten())
 
 
-def get_masks(folder, collapse_masks=False, centroid_radius=2):
+def get_masks(folder, collapse_masks=False, centroid_radius=2, border_thickness=2):
     """
     for folder containing labeled data, returns masks for soma, border of cells, and centroid. returned as 3D bool
     stacks, with one mask per cell, unless collapse_masks is True, in which case max is taken across all cells
@@ -113,7 +113,7 @@ def get_masks(folder, collapse_masks=False, centroid_radius=2):
     for i, cell in enumerate(cell_masks):
         masks_soma[i, cell[:, 0], cell[:, 1]] = True
         _, contour, _ = cv2.findContours(masks_soma[i].astype('uint8'), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        masks_border[i] = cv2.drawContours(np.zeros(dimensions), contour, 0, 1).astype('bool')
+        masks_border[i] = cv2.drawContours(np.zeros(dimensions), contour, 0, 1, thickness=border_thickness).astype('bool')
         center = np.mean(cell, 0).astype('int')
         masks_centroids[i] = cv2.circle(masks_centroids[i].astype('uint8'), (center[0], center[1]), centroid_radius, 1, thickness=-1)
 
@@ -138,8 +138,8 @@ def add_contours(img, contour, color=(1, 0, 0)):
 def enhance_contrast(img, percentiles=(5, 95)):
     """given 2D image, rescales the image between lower and upper percentile limits"""
 
-    lims = np.percentile(img.flatten(), percentiles)
-    img = (img-lims[0]) / np.ptp(lims)
+    limits = np.percentile(img.flatten(), percentiles)
+    img = (img-limits[0]) / np.ptp(limits)
 
     return img
 
