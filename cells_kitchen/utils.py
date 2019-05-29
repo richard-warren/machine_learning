@@ -75,9 +75,11 @@ def get_correlation_image(imgs):
     kernel = np.ones((3, 3), dtype='float32')
     kernel[1, 1] = 0
 
+    # normalize image
+    imgs = zscore(imgs, axis=0)
+
     # compute correlation image
-    img_corr = zscore(imgs, axis=0)
-    img_corr = convolve(img_corr, kernel[np.newaxis, :], mode='constant')
+    img_corr = convolve(imgs, kernel[np.newaxis, :], mode='constant')
     img_corr = imgs * img_corr
     img_corr = np.mean(img_corr, 0)
     img_corr = scale_img(img_corr)  # scale from 0->1
@@ -85,9 +87,9 @@ def get_correlation_image(imgs):
     return img_corr
 
 
-def scale_img(img, min_val=0, max_val=1):
+def scale_img(img):
     """ scales numpy array between min_val and max_val """
-    return (img - np.min(img)) / np.ptp(img.flatten())
+    return (img - np.min(img.flatten())) / np.ptp(img.flatten())
 
 
 def get_masks(folder, collapse_masks=False, centroid_radius=2):
@@ -131,6 +133,16 @@ def add_contours(img, contour, color=(1, 0, 0)):
     img_contour[inds[:, 0], inds[:, 1], :] = np.array(color)
 
     return img_contour
+
+
+def enhance_contrast(img, percentiles=(5, 95)):
+    """given 2D image, rescales the image between lower and upper percentile limits"""
+
+    lims = np.percentile(img.flatten(), percentiles)
+    img = (img-lims[0]) / np.ptp(lims)
+
+    return img
+
 
 
 
