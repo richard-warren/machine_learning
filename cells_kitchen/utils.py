@@ -115,14 +115,20 @@ def get_masks(folder, collapse_masks=False, centroid_radius=2, border_thickness=
         _, contour, _ = cv2.findContours(masks_soma[i].astype('uint8'), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         masks_border[i] = cv2.drawContours(np.zeros(dimensions), contour, 0, 1, thickness=border_thickness).astype('bool')
         center = np.mean(cell, 0).astype('int')
-        masks_centroids[i] = cv2.circle(masks_centroids[i].astype('uint8'), (center[0], center[1]), centroid_radius, 1, thickness=-1)
+        masks_centroids[i] = cv2.circle(masks_centroids[i].astype('uint8'), (center[1], center[0]), centroid_radius, 1, thickness=-1)
 
     # collapse across neurons
     if collapse_masks:
         [masks_soma, masks_border, masks_centroids] = \
             [np.max(x, 0) for x in (masks_soma, masks_border, masks_centroids)]
 
-    return masks_soma, masks_border, masks_centroids
+    masks = {
+        'somas': masks_soma,
+        'borders': masks_border,
+        'centroids': masks_centroids
+    }
+
+    return masks
 
 
 def add_contours(img, contour, color=(1, 0, 0)):
