@@ -10,7 +10,6 @@ import json
 import cv2
 
 
-
 def get_frame(file):
     """
     given name of .tif file, returns image as numpy array normalized from 0-1
