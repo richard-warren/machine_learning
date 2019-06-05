@@ -24,8 +24,8 @@ test_generator = DataGenerator(cfg.test_datasets, batch_size=cfg.batch_size, sub
                                normalize_subframes=cfg.normalize_subframes, epoch_size=cfg.epoch_size//cfg.batch_size)
 
 # create model
-# model = models.unet(train_generator.shape_X[1:], train_generator.shape_y[-1], filters=cfg.filters)
-model = models.unet((None, None, train_generator.shape_X[-1]), train_generator.shape_y[-1], filters=cfg.filters)
+model = models.unet(train_generator.shape_X[1:], train_generator.shape_y[-1], filters=cfg.filters)
+# model = models.unet((None, None, train_generator.shape_X[-1]), train_generator.shape_y[-1], filters=cfg.filters)
 
 # train, omg!
 if cfg.use_cpu:

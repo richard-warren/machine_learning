@@ -14,20 +14,20 @@ dice loss function
 
 # general
 data_dir = "F:\\cells_kitchen_files\\"
-datasets = ['N.00.00', 'N.01.01', 'N.02.00', 'N.03.00.t', 'N.04.00.t', 'YST']
+datasets = ['N.00.00', 'N.01.01', 'N.02.00', 'N.03.00.t', 'N.04.00.t', 'YST', 'K53', 'J115', 'J123']
 
 # training data
 y_layers = ['somas', 'centroids']  # ['somas', 'borders', 'centroids']
-border_thickness = 2
+border_thickness = 2  # thickness of borders for border labels
+summary_frames = 1000  # number of frames to use when computing summary images
 
 # training
 losswise_api_key = '3ZGMSXASM'  # set to False if not using losswise.com
 lr_init = .001
-normalize_subframes = False
+normalize_subframes = True
 subframe_size = (160, 160)  # each dimension must be divisible by four
 test_datasets = datasets.copy()
 train_datasets = datasets.copy()
-summary_frames = 1000  # number of frames to use when computing summary images
 use_cpu = False  # whether to use CPU instead of GPU for training
 filters = 64
 
