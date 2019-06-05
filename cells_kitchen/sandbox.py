@@ -4,9 +4,9 @@ labels_folder = "F:\\cells_kitchen_files\\labels\\"
 suffixes = ['N.00.00', 'N.01.01', 'N.02.00', 'N.03.00.t', 'N.04.00.t', 'YST']
 
 ## look at some sweet, sweet vids
-vid_num = 2
+vid_num = 0
 
-preview_vid(prefix+suffixes[vid_num], frames_to_show=200, fps=50)
+preview_vid(prefix+suffixes[vid_num], frames_to_show=np.inf, fps=100)
 
 ## show summary and target images for vid
 vid_num = 2
@@ -36,8 +36,6 @@ mosaic_targets = np.concatenate(targets, 1)
 plt.subplot(2, 1, 1); plt.imshow(mosaic_summaries)
 plt.subplot(2, 1, 2); plt.imshow(mosaic_targets)
 plt.show()
-
-
 
 
 

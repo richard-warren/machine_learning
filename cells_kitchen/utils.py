@@ -1,6 +1,5 @@
 import glob
 import os
-from PIL import Image
 import numpy as np
 from tqdm import tqdm
 from scipy.ndimage import convolve
@@ -8,6 +7,8 @@ from scipy.stats import zscore
 import matplotlib.pyplot as plt
 import json
 import cv2
+from PIL import Image
+import ipdb
 
 
 def get_frame(file):
@@ -88,7 +89,9 @@ def get_correlation_image(imgs):
 
 def scale_img(img):
     """ scales numpy array between min_val and max_val """
-    return (img - np.min(img.flatten())) / np.ptp(img.flatten())
+    if np.ptp(img):
+        img = (img - np.min(img)) / np.ptp(img)
+    return img
 
 
 def get_masks(folder, collapse_masks=False, centroid_radius=2, border_thickness=2):
@@ -144,13 +147,36 @@ def enhance_contrast(img, percentiles=(5, 95)):
     """given 2D image, rescales the image between lower and upper percentile limits"""
 
     limits = np.percentile(img.flatten(), percentiles)
-    img = (img-limits[0]) / np.ptp(limits)
+    img = np.clip(img-limits[0], 0, limits[1]) / np.ptp(limits)
 
     return img
 
 
+def save_prediction_img(X, y, y_pred, file, height=800, X_contrast=(0,100)):
+    """ given X and y_pred for a single image, (network output), writes an image to file concatening everybody """
 
+    # scaled from 0->1
+    for i in range(X.shape[-1]):
+        X[:, :, i] = scale_img(X[:, :, i])
+        if X_contrast != (0, 100):
+            X[:, :, i] = enhance_contrast(X[:, :, i], percentiles=X_contrast)
+    for i in range(y_pred.shape[-1]):
+        y_pred[:, :, i] = scale_img(y_pred[:, :, i])
 
+    # concatenate layers horizontally
+    X_cat = np.reshape(X, (X.shape[0], -1), order='F')
+    y_cat = np.reshape(y, (y.shape[0], -1), order='F')
+    y_pred_cat = np.reshape(y_pred, (y_pred.shape[0], -1), order='F')
+
+    # make image where three rows are X, y, and y_pred
+    cat = np.zeros((X.shape[0]*3, max(X_cat.shape[1], y_cat.shape[1])))
+    cat[:X.shape[0], :X_cat.shape[1]] = X_cat
+    cat[X.shape[0]:X.shape[0]*2, :y_cat.shape[1]] = y_cat
+    cat[X.shape[0]*2:, :y_cat.shape[1]] = y_pred_cat
+
+    img = Image.fromarray((cat * 255).astype('uint8'))
+    img = img.resize((int((cat.shape[1] / cat.shape[0]) * height), height), resample=Image.NEAREST)
+    img.save(file)
 
 
 

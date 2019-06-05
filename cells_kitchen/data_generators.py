@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from config import data_dir
 import os
-import ipdb as ipdb
+import ipdb
 
 
 class DataGenerator(Sequence):
@@ -14,12 +14,14 @@ class DataGenerator(Sequence):
     todo: subframe size randomize // random rotation // random scaling
     '''
 
-    def __init__(self, datasets, batch_size=8, subframe_size=(100, 100)):
+    def __init__(self, datasets, batch_size=8, subframe_size=(100, 100), normalize_subframes=False, epoch_size=1):
         # initialization
 
         self.datasets = datasets
         self.batch_size = batch_size
         self.subframe_size = subframe_size
+        self.normalize_subframes = normalize_subframes
+        self.epoch_size = epoch_size
 
         # load features and labels into DataFrame
         self.data = pd.DataFrame(index=datasets, columns=['X', 'y', 'corner_max'])
@@ -45,11 +47,16 @@ class DataGenerator(Sequence):
                       np.random.randint(self.data.loc[self.datasets[b], 'corner_max'][1]))
             x_inds = slice(corner[0], corner[0]+self.subframe_size[0])
             y_inds = slice(corner[1], corner[1]+self.subframe_size[1])
-            # ipdb.set_trace()
             X[i] = self.data.loc[self.datasets[b], 'X'][x_inds, y_inds]
             y[i] = self.data.loc[self.datasets[b], 'y'][x_inds, y_inds]
+
+        # normalize
+        if self.normalize_subframes:
+            for i in range(X.shape[0]):
+                for j in range(X.shape[-1]):
+                    X[i, :, :, j] = (X[i, :, :, j] - np.mean(X[i, :, :, j])) / np.std(X[i, :, :, j])
 
         return X, y
 
     def __len__(self):
-        return 1
+        return self.epoch_size
