@@ -37,7 +37,11 @@ plt.subplot(2, 1, 1); plt.imshow(mosaic_summaries)
 plt.subplot(2, 1, 2); plt.imshow(mosaic_targets)
 plt.show()
 
+##
 
+shape_new = (int(X.shape[1]*scale), int(X.shape[2]*scale))
+for i in X.shape[0]:
+    cv2.resize(X[0, :, :], shape_new)
 
 
 

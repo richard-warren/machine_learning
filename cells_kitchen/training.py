@@ -12,20 +12,22 @@ import pickle
 from glob import glob
 import models
 import utils
-import numpy as np
 
 if cfg.losswise_api_key:
     losswise.set_api_key(cfg.losswise_api_key)  # set up losswise.com visualization
 
 # create model data generators
 train_generator = DataGenerator(cfg.train_datasets, batch_size=cfg.batch_size, subframe_size=cfg.subframe_size,
-                                normalize_subframes=cfg.normalize_subframes, epoch_size=cfg.epoch_size//cfg.batch_size)
+                                normalize_subframes=cfg.normalize_subframes, epoch_size=cfg.epoch_size//cfg.batch_size,
+                                rotation=cfg.aug_rotation, scaling=cfg.aug_scaling)
 test_generator = DataGenerator(cfg.test_datasets, batch_size=cfg.batch_size, subframe_size=cfg.subframe_size,
-                               normalize_subframes=cfg.normalize_subframes, epoch_size=cfg.epoch_size//cfg.batch_size)
+                               normalize_subframes=cfg.normalize_subframes, epoch_size=cfg.epoch_size//cfg.batch_size,
+                               rotation=cfg.aug_rotation, scaling=cfg.aug_scaling)
 
 # create model
-model = models.unet(train_generator.shape_X[1:], train_generator.shape_y[-1], filters=cfg.filters)
-# model = models.unet((None, None, train_generator.shape_X[-1]), train_generator.shape_y[-1], filters=cfg.filters)
+# model = models.unet(train_generator.shape_X[1:], train_generator.shape_y[-1], filters=cfg.filters)
+model = models.unet((None, None, train_generator.shape_X[-1]), train_generator.shape_y[-1], filters=cfg.filters,
+                    kernel_initializer='glorot_normal', bn=cfg.batch_normalization)
 
 # train, omg!
 if cfg.use_cpu:
@@ -52,9 +54,6 @@ models_to_delete = glob(os.path.join(model_path, '*hdf5'))[:-1]
 model = load_model(glob(os.path.join(model_path, '*.hdf5'))[0])
 
 # get predictions for single batch
-# import importlib
-# importlib.reload(utils)
-
 X, y = test_generator[0]
 y_pred = model.predict(X)
 for i in range(X.shape[0]):
