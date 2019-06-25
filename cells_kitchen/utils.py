@@ -22,24 +22,23 @@ def get_frame(file):
     return img
 
 
-def get_frames(folder, frame_num=100, contiguous=False):
+def get_frames(folder, frame_inds=range(1), frame_num=False, progress_bar=True):
     """
-    given folder name and frames_to_get, gets frames_to_get evenly spaced frames from folder
+    gets stack of images from folder containing tiff files // if frame_inds is given, these are the frames
+    included in stack // otherwise, frame_num evenly spaced images are returned in the stack
     """
 
-    frame_num = min(frame_num, 1500)  # todo: this hack prevents user from falling helplessly into a RAMless abyss
+    frame_num = min(frame_num, 1500)  # todo: this hack prevents user from falling helplessly into a RAMless hellscape
 
     files = glob.glob(os.path.join(folder, '*.tif'))
     frame_num = min(len(files), frame_num)  # ensure requested frames don't exceed frames available
-    if contiguous:
-        frame_inds = range(frame_num)
-    else:
+    if frame_num:
         frame_inds = np.floor(np.linspace(0, len(files)-1, frame_num)).astype('int16')
 
-    img = get_frame(files[0])
-    imgs = np.zeros((frame_num, img.shape[0], img.shape[1]))
+    img = get_frame(files[0])  # get sample image from which dimensions can be determined
+    imgs = np.zeros((len(frame_inds), img.shape[0], img.shape[1]))
 
-    for i, f in enumerate(tqdm(frame_inds)):
+    for i, f in enumerate(tqdm(frame_inds, disable=(not progress_bar))):
         imgs[i] = get_frame(files[f])
 
     return imgs
@@ -68,27 +67,32 @@ def preview_vid(folder, frames_to_show=100, fps=30, close_when_done=False):
 
 def get_correlation_image(imgs):
     """
-    given movie folder, returns image representing temporal correlation between each pixel and surrounding eight pixels
+    given stack of images, returns image representing temporal correlation between each pixel and surrounding eight pixels
     """
 
     # define 8 neighbors filter
     kernel = np.ones((3, 3), dtype='float32')
     kernel[1, 1] = 0
+    mask = convolve(np.ones(imgs.shape[1:], dtype='float32'), kernel, mode='constant')
 
     # normalize image
-    imgs = zscore(imgs, axis=0)
+    # imgs = zscore(imgs, axis=0)
+    imgs -= np.mean(imgs, axis=0)
+    imgs_std = np.std(imgs, axis=0)
+    imgs_std[imgs_std == 0] = np.inf
+    imgs /= imgs_std
 
     # compute correlation image
-    img_corr = convolve(imgs, kernel[np.newaxis, :], mode='constant')
+    img_corr = convolve(imgs, kernel[np.newaxis, :], mode='constant') / mask
     img_corr = imgs * img_corr
     img_corr = np.mean(img_corr, 0)
-    img_corr = scale_img(img_corr)  # scale from 0->1
+    # img_corr = scale_img(img_corr)  # scale from 0->1
 
     return img_corr
 
 
 def scale_img(img):
-    """ scales numpy array between min_val and max_val """
+    """ scales numpy array between 0 and 1"""
     if np.ptp(img):
         img = (img - np.min(img)) / np.ptp(img)
     return img

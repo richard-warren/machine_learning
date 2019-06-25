@@ -6,7 +6,7 @@ suffixes = ['N.00.00', 'N.01.01', 'N.02.00', 'N.03.00.t', 'N.04.00.t', 'YST']
 ## look at some sweet, sweet vids
 vid_num = 0
 
-preview_vid(prefix+suffixes[vid_num], frames_to_show=np.inf, fps=100)
+preview_vid(prefix+'K53', frames_to_show=np.inf, fps=100)
 
 ## show summary and target images for vid
 vid_num = 2
@@ -37,12 +37,19 @@ plt.subplot(2, 1, 1); plt.imshow(mosaic_summaries)
 plt.subplot(2, 1, 2); plt.imshow(mosaic_targets)
 plt.show()
 
+## test correlation images
+import os
+import config as cfg
+# get summary images
+d = 'J123'
+folder = os.path.join(cfg.data_dir, 'datasets', 'images_' + d)
+
+img_stack = get_frames(folder, frame_num=1000)
+
 ##
-
-shape_new = (int(X.shape[1]*scale), int(X.shape[2]*scale))
-for i in X.shape[0]:
-    cv2.resize(X[0, :, :], shape_new)
-
+corr_img = get_correlation_image(img_stack)
+max_img = scale_img(img_stack.max(0))
+plt.imshow(corr_img, cmap='gray')
 
 
 
