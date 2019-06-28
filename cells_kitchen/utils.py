@@ -7,39 +7,21 @@ from scipy.stats import zscore
 import matplotlib.pyplot as plt
 import json
 import cv2
-from PIL import Image
+import tifffile
 import ipdb
 
 
-def get_frame(file):
-    """
-    given name of .tif file, returns image as numpy array normalized from 0-1
-    todo: is there a faster way to load a bunch of .tif files?
-    """
-
-    img = np.array(Image.open(file), dtype='float32')
-    img = img / np.max(img)
-    return img
-
-
-def get_frames(folder, frame_inds=range(1), frame_num=False, progress_bar=True):
+def get_frames(folder, frame_inds=0, frame_num=False):
     """
     gets stack of images from folder containing tiff files // if frame_inds is given, these are the frames
     included in stack // otherwise, frame_num evenly spaced images are returned in the stack
     """
 
-    frame_num = min(frame_num, 1500)  # todo: this hack prevents user from falling helplessly into a RAMless hellscape
-
     files = glob.glob(os.path.join(folder, '*.tif'))
-    frame_num = min(len(files), frame_num)  # ensure requested frames don't exceed frames available
     if frame_num:
+        frame_num = min(len(files), frame_num, 1500)
         frame_inds = np.floor(np.linspace(0, len(files)-1, frame_num)).astype('int16')
-
-    img = get_frame(files[0])  # get sample image from which dimensions can be determined
-    imgs = np.zeros((len(frame_inds), img.shape[0], img.shape[1]))
-
-    for i, f in enumerate(tqdm(frame_inds, disable=(not progress_bar))):
-        imgs[i] = get_frame(files[f])
+    imgs = tifffile.imread(np.array(files)[frame_inds].tolist())
 
     return imgs
 
@@ -57,7 +39,7 @@ def preview_vid(folder, frames_to_show=100, fps=30, close_when_done=False):
     frames_to_show = min(frames_to_show, len(files))
 
     for f in tqdm(files[0:frames_to_show]):
-        frame = get_frame(f)
+        frame = tifffile.imread(f)
         im_plot.set_data(frame)
         plt.pause(1/fps)
 
@@ -76,11 +58,11 @@ def get_correlation_image(imgs):
     mask = convolve(np.ones(imgs.shape[1:], dtype='float32'), kernel, mode='constant')
 
     # normalize image
-    # imgs = zscore(imgs, axis=0)
-    imgs -= np.mean(imgs, axis=0)
-    imgs_std = np.std(imgs, axis=0)
-    imgs_std[imgs_std == 0] = np.inf
-    imgs /= imgs_std
+    imgs = zscore(imgs, axis=0)
+    # imgs -= np.mean(imgs, axis=0)
+    # imgs_std = np.std(imgs, axis=0)
+    # imgs_std[imgs_std == 0] = np.inf
+    # imgs /= imgs_std
 
     # compute correlation image
     img_corr = convolve(imgs, kernel[np.newaxis, :], mode='constant') / mask

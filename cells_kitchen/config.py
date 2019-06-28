@@ -19,7 +19,7 @@ datasets = ['K53', 'J115', 'J123', 'N.00.00', 'N.01.01', 'N.02.00', 'N.03.00.t',
 y_layers = ['somas', 'centroids']  # ['somas', 'borders', 'centroids']
 border_thickness = 2  # thickness of borders for border labels
 summary_frames = 1000  # number of frames to use when computing summary images
-max_batches = 5  # max number of batches to use for computing summary images
+max_batches = 1000  # max number of batches to use for computing summary images
 
 # training
 aug_rotation = True  # whether to apply 0, 90, 180, or 270 degree rotations randomly

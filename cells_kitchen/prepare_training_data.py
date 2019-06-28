@@ -17,15 +17,15 @@ for d in cfg.datasets:
     batch_inds = np.arange(0, total_frames, cfg.summary_frames)
 
     # initialize image stack
-    _ = get_frames(folder, frame_inds=range(1), progress_bar=False)
+    _ = get_frames(folder, frame_inds=0)
     batches = min(total_frames // cfg.summary_frames, cfg.max_batches)
-    all_summaries = np.zeros((batches, _.shape[1], _.shape[2], 4))
+    all_summaries = np.zeros((batches, _.shape[0], _.shape[1], 4))
 
     for b in tqdm(range(all_summaries.shape[0])):
 
         # print('batch frames:: %i-%i' % (batch_inds[b], batch_inds[b]+cfg.summary_frames))
 
-        img_stack = get_frames(folder, frame_inds=np.arange(batch_inds[b], batch_inds[b]+cfg.summary_frames), progress_bar=False)
+        img_stack = get_frames(folder, frame_inds=np.arange(batch_inds[b], batch_inds[b]+cfg.summary_frames))
         summaries_batch = {
             'X_corr': get_correlation_image(img_stack),
             'X_mean': np.mean(img_stack, 0),
@@ -37,7 +37,7 @@ for d in cfg.datasets:
     # collapse across summary images and scale from 0-1
     X = all_summaries.max(0)
     for x in range(X.shape[-1]):
-        X[x] = scale_img(X[x])
+        X[:,:,x] = scale_img(X[:,:,x])
 
     summaries = {
         'X_corr': X[:,:,0],
