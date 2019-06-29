@@ -9,7 +9,8 @@ import json
 import cv2
 import tifffile
 import ipdb
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
+import config as cfg
 
 
 def get_frames(folder, frame_inds=0, frame_num=False):
@@ -87,7 +88,7 @@ def scale_img(img):
     return img
 
 
-def get_masks(folder, collapse_masks=False, centroid_radius=2, border_thickness=2):
+def get_targets(folder, collapse_masks=False, centroid_radius=2, border_thickness=2):
     """
     for folder containing labeled data, returns masks for soma, border of cells, and centroid. returned as 3D bool
     stacks, with one mask per cell, unless collapse_masks is True, in which case max is taken across all cells
@@ -140,12 +141,13 @@ def enhance_contrast(img, percentiles=(5, 95)):
     """given 2D image, rescales the image between lower and upper percentile limits"""
 
     limits = np.percentile(img.flatten(), percentiles)
-    img = np.clip(img-limits[0], 0, limits[1]) / np.ptp(limits)
+    img = np.clip(img-limits[0], 0, limits[1]-limits[0]) / np.ptp(limits)
+    # img = np.clip(img, limits[0], limits[1]) / np.ptp(limits)
 
     return img
 
 
-def save_prediction_img(file, X, y, y_pred=False, height=800, X_contrast=(0,100)):
+def save_prediction_img(file, X, y, y_pred=False, height=800, X_contrast=(0,100), column_titles=None):
     """ given X and y_pred for a single image, (network output), writes an image to file concatening everybody """
 
     # scaled from 0->1
@@ -174,8 +176,28 @@ def save_prediction_img(file, X, y, y_pred=False, height=800, X_contrast=(0,100)
         cat[X.shape[0]*2:, :y_cat.shape[1]] = y_pred_cat
 
     img = Image.fromarray((cat * 255).astype('uint8'))
+
+    if column_titles is not None:
+        font = ImageFont.truetype("arial.ttf", 20)
+        img_draw = ImageDraw.Draw(img)
+        for i, t in enumerate(column_titles):
+            img_draw.text((X.shape[1] * i, 0), t, fill=255, font=font)
+
     img = img.resize((int((cat.shape[1] / cat.shape[0]) * height), height), resample=Image.NEAREST)
     img.save(file)
+
+
+def write_sample_imgs(X_contrast=(0,100)):
+    '''writes sample images for training and test data for all .npz files in training_data folder'''
+
+    files = glob.glob(os.path.join(cfg.data_dir, 'training_data',  '*.npz'))
+
+    for f in files:
+        data = np.load(f)
+        X_mat = np.stack(data['X'][()].values(), axis=2)
+        y_mat = np.stack(data['y'][()].values(), axis=2)
+        file_name = os.path.join(cfg.data_dir, 'training_data', os.path.splitext(f)[0] + '.png')
+        save_prediction_img(file_name, X_mat, y_mat, X_contrast=X_contrast, column_titles=data['X'][()].keys())
 
 
 
