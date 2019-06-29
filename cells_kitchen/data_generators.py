@@ -1,7 +1,7 @@
 from keras.utils import Sequence
 import numpy as np
 import pandas as pd
-from config import data_dir
+import config as cfg
 import os
 import cv2
 import ipdb
@@ -31,10 +31,13 @@ class DataGenerator(Sequence):
         self.data = pd.DataFrame(index=datasets, columns=['X', 'y', 'corner_max'])
         for d in datasets:
 
-            data_sub = np.load(os.path.join(data_dir, 'training_data', d + '.npz'))
-            corner_max = (data_sub['X'].shape[0] - subframe_size[0],
-                          data_sub['X'].shape[1] - subframe_size[1])  # subframe corner can be no further than corner_max
-            self.data.loc[d, :] = (data_sub['X'], data_sub['y'], corner_max)
+            data_sub = np.load(os.path.join(cfg.data_dir, 'training_data', d + '.npz'))
+            _ = data_sub['X'][()][cfg.X_layers[0]]
+            corner_max = (_.shape[0] - subframe_size[0],
+                          _.shape[1] - subframe_size[1])  # subframe corner can be no further than corner_max
+            X = np.stack([data_sub['X'][()][k] for k in cfg.X_layers], axis=2)
+            y = np.stack([data_sub['y'][()][k] for k in cfg.y_layers], axis=2)
+            self.data.loc[d, :] = (X, y, corner_max)
 
         self.shape_X = (batch_size,) + subframe_size + (self.data.loc[datasets[0], 'X'].shape[-1],)  # batch size X height X width X depth
         self.shape_y = (batch_size,) + subframe_size + (self.data.loc[datasets[0], 'y'].shape[-1],)

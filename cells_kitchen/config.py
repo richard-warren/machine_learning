@@ -1,6 +1,6 @@
 """
 TODO:
-todo: update training script to work with dict training data format
+todo: get generalization to new vids working!
 add option for starting with certain model weights?
 try with holdout test set
 add metadata storage to models...
@@ -21,7 +21,7 @@ summary_frames = 1000  # number of frames to use when computing summary images
 max_batches = 1000  # max number of batches to use for computing summary images
 
 # training
-X_layers = ['corr', 'mean', 'median', 'max', 'std']
+X_layers = ['corr', 'median']  # ['corr', 'mean', 'median', 'max', 'std']
 y_layers = ['somas', 'centroids']  # ['somas', 'borders', 'centroids']
 aug_rotation = True  # whether to apply 0, 90, 180, or 270 degree rotations randomly
 aug_scaling = (.75, 1.25)  # min and max image scaling // set to (1, 1) for no scaling
