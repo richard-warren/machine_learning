@@ -38,18 +38,18 @@ plt.subplot(2, 1, 2); plt.imshow(mosaic_targets)
 plt.show()
 
 ## test correlation images
-import os
-import config as cfg
-# get summary images
-d = 'J123'
-folder = os.path.join(cfg.data_dir, 'datasets', 'images_' + d)
+import glob, os, tifffile, utils
+import numpy as np
+folder = r'F:\cells_kitchen_files\datasets\images_J115'
 
-img_stack = get_frames(folder, frame_num=1000)
+stack = utils.get_frames(folder, frame_inds=np.arange(0, 1000))
 
-##
-corr_img = get_correlation_image(img_stack)
-max_img = scale_img(img_stack.max(0))
-plt.imshow(corr_img, cmap='gray')
+corrZ = utils.get_correlation_image(stack, use_zscore=True)
+corr = utils.get_correlation_image(stack, use_zscore=False)
+
+
+
+
 
 
 

@@ -1,6 +1,6 @@
 """
 TODO:
-todo: work on summary imgs: catch all APs // make look similar across vids...
+todo: make summary images, labels to include parametric during TRAINING
 add option for starting with certain model weights?
 try with holdout test set
 add metadata storage to models...
@@ -13,15 +13,16 @@ dice loss function
 
 # general
 data_dir = "F:\\cells_kitchen_files\\"
-datasets = ['K53', 'J115', 'J123', 'N.00.00', 'N.01.01', 'N.02.00', 'N.03.00.t', 'N.04.00.t', 'YST']
+datasets = ['N.04.00.t', 'N.00.00', 'N.01.01', 'N.02.00', 'N.03.00.t', 'YST', 'K53', 'J115', 'J123']
 
 # training data
-y_layers = ['somas', 'centroids']  # ['somas', 'borders', 'centroids']
 border_thickness = 2  # thickness of borders for border labels
 summary_frames = 1000  # number of frames to use when computing summary images
-max_batches = 1000  # max number of batches to use for computing summary images
+max_batches = 2  # max number of batches to use for computing summary images
 
 # training
+X_layers = ['corr', 'mean', 'median', 'max', 'std']
+y_layers = ['somas', 'centroids']  # ['somas', 'borders', 'centroids']
 aug_rotation = True  # whether to apply 0, 90, 180, or 270 degree rotations randomly
 aug_scaling = (.75, 1.25)  # min and max image scaling // set to (1, 1) for no scaling
 batch_normalization = True

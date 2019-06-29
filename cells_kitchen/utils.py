@@ -9,6 +9,7 @@ import json
 import cv2
 import tifffile
 import ipdb
+from PIL import Image
 
 
 def get_frames(folder, frame_inds=0, frame_num=False):
@@ -21,7 +22,10 @@ def get_frames(folder, frame_inds=0, frame_num=False):
     if frame_num:
         frame_num = min(len(files), frame_num, 1500)
         frame_inds = np.floor(np.linspace(0, len(files)-1, frame_num)).astype('int16')
-    imgs = tifffile.imread(np.array(files)[frame_inds].tolist())
+    try:
+        imgs = tifffile.imread(np.array(files)[frame_inds].tolist())
+    except:
+        ipdb.set_trace()
 
     return imgs
 
@@ -30,6 +34,7 @@ def preview_vid(folder, frames_to_show=100, fps=30, close_when_done=False):
     """
     opens window and plays movie from sequence of .tif files
     shows the first frames_to_show frames contained in folder
+    todo: auto contrast adjustment
     """
 
     # initialize window
@@ -52,29 +57,31 @@ def get_correlation_image(imgs):
     given stack of images, returns image representing temporal correlation between each pixel and surrounding eight pixels
     """
 
+    imgs = imgs.copy()  # make sure we're pointing to a new object
+
     # define 8 neighbors filter
     kernel = np.ones((3, 3), dtype='float32')
     kernel[1, 1] = 0
     mask = convolve(np.ones(imgs.shape[1:], dtype='float32'), kernel, mode='constant')
 
     # normalize image
-    imgs = zscore(imgs, axis=0)
-    # imgs -= np.mean(imgs, axis=0)
-    # imgs_std = np.std(imgs, axis=0)
-    # imgs_std[imgs_std == 0] = np.inf
-    # imgs /= imgs_std
+    # imgs = zscore(imgs, axis=0)
+    imgs -= np.mean(imgs, axis=0)
+    imgs_std = np.std(imgs, axis=0)
+    imgs_std[imgs_std == 0] = np.inf
+    imgs /= imgs_std
 
     # compute correlation image
     img_corr = convolve(imgs, kernel[np.newaxis, :], mode='constant') / mask
     img_corr = imgs * img_corr
     img_corr = np.mean(img_corr, 0)
-    # img_corr = scale_img(img_corr)  # scale from 0->1
 
     return img_corr
 
 
 def scale_img(img):
     """ scales numpy array between 0 and 1"""
+
     if np.ptp(img):
         img = (img - np.min(img)) / np.ptp(img)
     return img
@@ -138,7 +145,7 @@ def enhance_contrast(img, percentiles=(5, 95)):
     return img
 
 
-def save_prediction_img(X, y, y_pred, file, height=800, X_contrast=(0,100)):
+def save_prediction_img(file, X, y, y_pred=False, height=800, X_contrast=(0,100)):
     """ given X and y_pred for a single image, (network output), writes an image to file concatening everybody """
 
     # scaled from 0->1
@@ -146,19 +153,25 @@ def save_prediction_img(X, y, y_pred, file, height=800, X_contrast=(0,100)):
         X[:, :, i] = scale_img(X[:, :, i])
         if X_contrast != (0, 100):
             X[:, :, i] = enhance_contrast(X[:, :, i], percentiles=X_contrast)
-    for i in range(y_pred.shape[-1]):
-        y_pred[:, :, i] = scale_img(y_pred[:, :, i])
+    if y_pred:
+        for i in range(y_pred.shape[-1]):
+            y_pred[:, :, i] = scale_img(y_pred[:, :, i])
 
     # concatenate layers horizontally
     X_cat = np.reshape(X, (X.shape[0], -1), order='F')
     y_cat = np.reshape(y, (y.shape[0], -1), order='F')
-    y_pred_cat = np.reshape(y_pred, (y_pred.shape[0], -1), order='F')
+    if y_pred:
+        y_pred_cat = np.reshape(y_pred, (y_pred.shape[0], -1), order='F')
 
     # make image where three rows are X, y, and y_pred
-    cat = np.zeros((X.shape[0]*3, max(X_cat.shape[1], y_cat.shape[1])))
+    if y_pred:
+        cat = np.zeros((X.shape[0]*3, max(X_cat.shape[1], y_cat.shape[1])))
+    else:
+        cat = np.zeros((X.shape[0] * 2, max(X_cat.shape[1], y_cat.shape[1])))
     cat[:X.shape[0], :X_cat.shape[1]] = X_cat
     cat[X.shape[0]:X.shape[0]*2, :y_cat.shape[1]] = y_cat
-    cat[X.shape[0]*2:, :y_cat.shape[1]] = y_pred_cat
+    if y_pred:
+        cat[X.shape[0]*2:, :y_cat.shape[1]] = y_pred_cat
 
     img = Image.fromarray((cat * 255).astype('uint8'))
     img = img.resize((int((cat.shape[1] / cat.shape[0]) * height), height), resample=Image.NEAREST)

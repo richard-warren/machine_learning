@@ -2,7 +2,7 @@ import glob
 import config as cfg
 import numpy as np
 import os
-from utils import get_frames, get_correlation_image, scale_img, get_masks
+from utils import get_frames, get_correlation_image, scale_img, get_masks, save_prediction_img
 from PIL import Image
 from tqdm import tqdm
 import ipdb as ipdb
@@ -20,31 +20,20 @@ for d in cfg.datasets:
     _ = get_frames(folder, frame_inds=0)
     batches = min(total_frames // cfg.summary_frames, cfg.max_batches)
     all_summaries = np.zeros((batches, _.shape[0], _.shape[1], 4))
+    X = dict.fromkeys(['corr', 'mean', 'median', 'max', 'std'], np.zeros((2, 4, 6)))
 
     for b in tqdm(range(all_summaries.shape[0])):
-
-        # print('batch frames:: %i-%i' % (batch_inds[b], batch_inds[b]+cfg.summary_frames))
-
         img_stack = get_frames(folder, frame_inds=np.arange(batch_inds[b], batch_inds[b]+cfg.summary_frames))
-        summaries_batch = {
-            'X_corr': get_correlation_image(img_stack),
-            'X_mean': np.mean(img_stack, 0),
-            'X_max': img_stack.max(0),
-            'X_std': img_stack.std(0)
-        }
-        all_summaries[b] = np.stack(summaries_batch.values(), axis=2)
+        all_summaries[b, :, :, 0] = get_correlation_image(img_stack)
+        all_summaries[b, :, :, 1] = np.mean(img_stack, 0)
+        all_summaries[b, :, :, 2] = img_stack.max(0)
+        all_summaries[b, :, :, 3] = img_stack.std(0)
 
     # collapse across summary images and scale from 0-1
     X = all_summaries.max(0)
+    X =
     for x in range(X.shape[-1]):
-        X[:,:,x] = scale_img(X[:,:,x])
-
-    summaries = {
-        'X_corr': X[:,:,0],
-        'X_mean': X[:,:,1],
-        'X_max': X[:,:,2],
-        'X_std': X[:,:,3]
-    }
+        X[:, :, x] = scale_img(X[:, :, x])
 
     # get targets
     targets = get_masks(os.path.join(cfg.data_dir, 'labels', d),
@@ -56,13 +45,9 @@ for d in cfg.datasets:
     np.savez(os.path.join(cfg.data_dir, 'training_data', d), X=X, y=y)
 
     # write images to disk
-    hgt = 600
-    for t in (summaries, targets):
-        for key, val in t.items():
-            file_name = os.path.join(cfg.data_dir, 'training_data', d + '_' + key + '_new.png')
-            img = Image.fromarray((val*255).astype('uint8'))
-            img = img.resize((int((val.shape[1]/val.shape[0])*hgt), hgt))
-            img.save(file_name)
+    file_name = os.path.join(cfg.data_dir, 'training_data', d + '.png')
+    save_prediction_img(file_name, X, y, X_contrast=(0, 100))
+
 
 print('all done!')
 
