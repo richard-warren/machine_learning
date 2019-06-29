@@ -147,7 +147,7 @@ def enhance_contrast(img, percentiles=(5, 95)):
     return img
 
 
-def save_prediction_img(file, X, y, y_pred=False, height=800, X_contrast=(0,100), column_titles=None):
+def save_prediction_img(file, X, y, y_pred=None, height=800, X_contrast=(0,100), column_titles=None):
     """ given X and y_pred for a single image, (network output), writes an image to file concatening everybody """
 
     # scaled from 0->1
@@ -155,24 +155,24 @@ def save_prediction_img(file, X, y, y_pred=False, height=800, X_contrast=(0,100)
         X[:, :, i] = scale_img(X[:, :, i])
         if X_contrast != (0, 100):
             X[:, :, i] = enhance_contrast(X[:, :, i], percentiles=X_contrast)
-    if y_pred:
+    if type(y_pred) == np.ndarray:
         for i in range(y_pred.shape[-1]):
             y_pred[:, :, i] = scale_img(y_pred[:, :, i])
 
     # concatenate layers horizontally
     X_cat = np.reshape(X, (X.shape[0], -1), order='F')
     y_cat = np.reshape(y, (y.shape[0], -1), order='F')
-    if y_pred:
+    if type(y_pred)==np.ndarray:
         y_pred_cat = np.reshape(y_pred, (y_pred.shape[0], -1), order='F')
 
     # make image where three rows are X, y, and y_pred
-    if y_pred:
+    if type(y_pred)==np.ndarray:
         cat = np.zeros((X.shape[0]*3, max(X_cat.shape[1], y_cat.shape[1])))
     else:
         cat = np.zeros((X.shape[0] * 2, max(X_cat.shape[1], y_cat.shape[1])))
     cat[:X.shape[0], :X_cat.shape[1]] = X_cat
     cat[X.shape[0]:X.shape[0]*2, :y_cat.shape[1]] = y_cat
-    if y_pred:
+    if type(y_pred)==np.ndarray:
         cat[X.shape[0]*2:, :y_cat.shape[1]] = y_pred_cat
 
     img = Image.fromarray((cat * 255).astype('uint8'))

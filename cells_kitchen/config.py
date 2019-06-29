@@ -1,6 +1,5 @@
 """
 TODO:
-todo: get generalization to new vids working!
 add option for starting with certain model weights?
 try with holdout test set
 add metadata storage to models...
@@ -34,6 +33,7 @@ test_datasets = datasets.copy()  # ['N.00.00', 'N.01.01', 'N.02.00', 'N.03.00.t'
 train_datasets = datasets.copy()  # ['K53', 'J115', 'J123']
 use_cpu = False  # whether to use CPU instead of GPU for training
 filters = 32  # seemed to work with as little as 16 // 8 was a little blurrier, which is encouraging...
+save_predictions_during_training = True  # set whether to save images of predictions at each epoch end during training
 
 batch_size = 16
 epoch_size = 64  # number of image (NOT batches) in an epoch

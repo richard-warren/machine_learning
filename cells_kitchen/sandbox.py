@@ -37,16 +37,37 @@ plt.subplot(2, 1, 1); plt.imshow(mosaic_summaries)
 plt.subplot(2, 1, 2); plt.imshow(mosaic_targets)
 plt.show()
 
-## test correlation images
-import glob, os, tifffile, utils
-import numpy as np
-folder = r'F:\cells_kitchen_files\datasets\images_J115'
+## load and generate prediction images for model
 
-stack = utils.get_frames(folder, frame_inds=np.arange(0, 1000))
+model_path = r'F:\cells_kitchen_files\models\190629_17.13.59'
 
-corrZ = utils.get_correlation_image(stack, use_zscore=True)
-corr = utils.get_correlation_image(stack, use_zscore=False)
 
+from data_generators import DataGenerator
+from keras.models import load_model
+from keras.callbacks import ModelCheckpoint, EarlyStopping
+from losswise.libs import LosswiseKerasCallback
+import config as cfg
+from datetime import datetime
+import os
+import pickle
+from glob import glob
+
+# create model data generators
+train_generator = DataGenerator(cfg.train_datasets, batch_size=cfg.batch_size, subframe_size=cfg.subframe_size,
+                                normalize_subframes=cfg.normalize_subframes, epoch_size=cfg.epoch_size//cfg.batch_size,
+                                rotation=cfg.aug_rotation, scaling=cfg.aug_scaling)
+test_generator = DataGenerator(cfg.test_datasets, batch_size=cfg.batch_size, subframe_size=cfg.subframe_size,
+                               normalize_subframes=cfg.normalize_subframes, epoch_size=cfg.epoch_size//cfg.batch_size,
+                               rotation=cfg.aug_rotation, scaling=cfg.aug_scaling)
+
+model = load_model(glob(os.path.join(model_path, '*.hdf5'))[0])
+
+# get predictions for single batch
+X, y = test_generator[0]
+y_pred = model.predict(X)
+for i in range(X.shape[0]):
+    file = os.path.join(model_path, 'prediction%i.png' % i)
+    save_prediction_img(file, X[i], y[i], y_pred[i], X_contrast=(0, 100))
 
 
 
