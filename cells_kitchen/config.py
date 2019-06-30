@@ -1,5 +1,6 @@
 """
 TODO:
+todo: new dataset generalization // data aug to get rid of across dataset differences?
 add option for starting with certain model weights?
 try with holdout test set
 add metadata storage to models...
@@ -27,10 +28,10 @@ aug_scaling = (.75, 1.25)  # min and max image scaling // set to (1, 1) for no s
 batch_normalization = True
 losswise_api_key = '3ZGMSXASM'  # set to False if not using losswise.com
 lr_init = .1
-normalize_subframes = False
+normalize_subframes = False  # now this is built into the model when batch_normalization is True
 subframe_size = (160, 160)  # each dimension must be divisible by four
-test_datasets = datasets.copy()  # ['N.00.00', 'N.01.01', 'N.02.00', 'N.03.00.t', 'N.04.00.t', 'YST']
-train_datasets = datasets.copy()  # ['K53', 'J115', 'J123']
+test_datasets = ['N.00.00', 'N.01.01', 'N.02.00', 'N.03.00.t', 'N.04.00.t', 'YST']
+train_datasets = ['K53', 'J115', 'J123']
 use_cpu = False  # whether to use CPU instead of GPU for training
 filters = 32  # seemed to work with as little as 16 // 8 was a little blurrier, which is encouraging...
 save_predictions_during_training = True  # set whether to save images of predictions at each epoch end during training

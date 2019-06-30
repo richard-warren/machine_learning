@@ -10,7 +10,9 @@ def unet(input_size, output_channels, filters=32, lr_init=.001, kernel_initializ
 
     inputs = Input(input_size)
 
-    conv1 = Conv2D(filters, 3, activation='relu', padding='same', kernel_initializer=kernel_initializer)(inputs)
+    conv1 = BatchNormalization(input_shape=input_size)(inputs) if bn else inputs  # normalize inputs
+
+    conv1 = Conv2D(filters, 3, activation='relu', padding='same', kernel_initializer=kernel_initializer)(conv1)
     conv1 = Conv2D(filters, 3, activation='relu', padding='same', kernel_initializer=kernel_initializer)(conv1)
     conv1 = BatchNormalization()(conv1) if bn else conv1
     pool1 = MaxPooling2D(pool_size=(2, 2))(conv1)
