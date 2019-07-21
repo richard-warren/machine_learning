@@ -27,7 +27,8 @@ test_generator = DataGenerator(cfg.test_datasets, batch_size=cfg.batch_size, sub
 # create model
 # model = models.unet(train_generator.shape_X[1:], train_generator.shape_y[-1], filters=cfg.filters)
 model = models.unet((None, None, train_generator.shape_X[-1]), train_generator.shape_y[-1], filters=cfg.filters,
-                    kernel_initializer='glorot_normal', bn=cfg.batch_normalization)
+                    kernel_initializer='glorot_normal', batch_normalization=cfg.batch_normalization,
+                    high_pass_sigma=cfg.high_pass_sigma)
 
 
 # get predictions for single batch
@@ -46,6 +47,7 @@ if cfg.use_cpu:
     K.set_session(sess)
 
 model_folder = datetime.now().strftime('%y%m%d_%H.%M.%S')
+# model_folder = 'test'
 model_path = os.path.join(cfg.data_dir, 'models', model_folder)
 os.makedirs(model_path)
 callbacks = [EarlyStopping(patience=cfg.early_stopping, verbose=1), # stop when validation loss stops increasing
