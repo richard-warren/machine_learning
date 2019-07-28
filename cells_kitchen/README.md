@@ -4,10 +4,10 @@ neuron segmentation for calcium imaging. to be used as initialization for CalmAn
 **stage 1 - region proposal**  
 identifies potential neuron locations using fully convolutional networks to segment neurons from background (region)
 
-**stage 2 - instance segmentation**  
+**stage 2 - instance segmentation (**  
 applies a segmentation network to subframes centered at maxima of segmentation from stage 1, yielding masks for individual neurons
 
-##instructions
+## instructions
 
 #### setup
 make local data directory containing training videos and labels. the directory should have the following subdirectories:
@@ -30,8 +30,8 @@ this creates training_data folder in your data directory that contains numpy fil
 ```
 python region_proposal\train.py
 ```
-this will start training the network, saving models in a 'models' folder in your data directory. each model has it's own unique subfolder with the data and time.
-during training predictions are generated and saved as images in the model folder so you can see how the predictions are evolving with training
+this will start training the network, saving models in a 'models' folder in your data directory. each model has it's own unique subfolder with the date and time.
+during training predictions are generated and saved as images in the model's folder so you can see how the predictions are evolving with training
 
 losswise.com can be used for nice visualizations during training. you can enter your losswise_api_key in the config file to visualize training through your losswise account
 
