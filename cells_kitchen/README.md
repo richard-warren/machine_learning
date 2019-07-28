@@ -9,7 +9,7 @@ applies a segmentation network to subframes centered at maxima of segmentation f
 
 ## instructions
 
-#### setup
+### setup
 make local data directory containing training videos and labels. the directory should have the following subdirectories:
    * datasets: contains folders for each training video, with folders named 'images_J115', 'image_J123', etc.
    * labels: contains folders with labels for each each training video, with format 'J115', J123', etc.   
@@ -20,13 +20,13 @@ edit region_proposal/config.py
    * test_datasets, train_datasets: datasets to be used for training and testing/validation
    * X_layers, y_layers: choose which summary and target images to include in the network
 
-## prepare training data
+### prepare training data
 in command line from cells_kitchen root directory, prepare training data as follows:
 ```
 python region_proposal\prepare_training_data.py
 ```
 this creates training_data folder in your data directory that contains numpy files with summary images and targets that are used for training
-## train!
+### train!
 ```
 python region_proposal\train.py
 ```
