@@ -25,7 +25,8 @@ in command line from cells_kitchen root directory, prepare training data as foll
 ```
 python region_proposal\prepare_training_data.py
 ```
-this creates training_data folder in your data directory that contains numpy files with summary images and targets that are used for training
+this creates training_data folder in your data directory that contains numpy files with summary images and targets that are used for training.
+the folder will also contain images .png files showing all summary and target images for reference.
 ### train!
 ```
 python region_proposal\train.py
