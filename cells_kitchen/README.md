@@ -4,7 +4,7 @@ neuron segmentation for calcium imaging. to be used as initialization for CalmAn
 **stage 1 - region proposal**  
 identifies potential neuron locations using fully convolutional networks to segment neurons from background (region)
 
-**stage 2 - instance segmentation (**  
+**stage 2 - instance segmentation (not yet started)**  
 applies a segmentation network to subframes centered at maxima of segmentation from stage 1, yielding masks for individual neurons
 
 ## instructions
