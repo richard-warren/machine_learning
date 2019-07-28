@@ -1,7 +1,7 @@
 """
 TODO:
-todo: new dataset generalization
-todo: data aug to get rid of across dataset differences?
+todo: visualize activations in network, eg high pass filter section
+express parameters in um rather than pixels using dataset metadata
 add option for starting with certain model weights?
 try with holdout test set
 add metadata storage to models...
@@ -18,12 +18,12 @@ datasets = ['N.04.00.t', 'N.00.00', 'N.01.01', 'N.02.00', 'N.03.00.t', 'YST', 'K
 
 # training data
 border_thickness = 2  # thickness of borders for border labels
-summary_frames = 1000  # number of frames to use when computing summary images
+summary_frames = 1000  # number of frames per batch when computing summary images
 max_batches = 1000  # max number of batches to use for computing summary images
 
 # training
-X_layers = ['corr', 'median']  # ['corr', 'mean', 'median', 'max', 'std']
-y_layers = ['somas', 'centroids']  # ['somas', 'borders', 'centroids']
+X_layers = ['corr', 'median', 'std']  # summary images to include as input to the network // ['corr', 'mean', 'median', 'max', 'std']
+y_layers = ['somas', 'centroids']  # target images to use as output ['somas', 'borders', 'centroids']
 high_pass_sigma = 15  # std of gaussian based high pass filtering of inptus // set to False to turn off high pass filtering
 aug_rotation = True  # whether to apply 0, 90, 180, or 270 degree rotations randomly
 aug_scaling = (.75, 1.25)  # min and max image scaling // set to (1, 1) for no scaling

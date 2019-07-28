@@ -44,7 +44,10 @@ for d in cfg.datasets:
                           collapse_masks=True, centroid_radius=3, border_thickness=cfg.border_thickness)
 
     # store data for model training
-    np.savez(os.path.join(cfg.data_dir, 'training_data', d), X=X, y=y)
+    training_data_folder = os.path.join(cfg.data_dir, 'training_data')
+    if not os.path.exists(training_data_folder):
+        os.makedirs(training_data_folder)
+    np.savez(os.path.join(training_data_folder, d), X=X, y=y)
 
 # write sample images to disk
 utils.write_sample_imgs(X_contrast=(5, 99))
