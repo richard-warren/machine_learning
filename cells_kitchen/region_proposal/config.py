@@ -3,7 +3,6 @@ TODO:
 todo: visualize activations in network, eg high pass filter section
 express parameters in um rather than pixels using dataset metadata
 add option for starting with certain model weights?
-try with holdout test set
 add metadata storage to models...
 try generating predictions on entire image... // how to change model size but keep weights...
 try zscore frames instead of 0-1?
@@ -35,7 +34,7 @@ subframe_size = (160, 160)  # each dimension must be divisible by four
 test_datasets = ['N.00.00', 'N.01.01', 'N.02.00', 'N.03.00.t', 'N.04.00.t', 'YST']
 train_datasets = ['K53', 'J115', 'J123']
 use_cpu = False  # whether to use CPU instead of GPU for training
-filters = 32  # seemed to work with as little as 16 // 8 was a little blurrier, which is encouraging...
+filters = 16  # seemed to work with as little as 16 // 8 was a little blurrier, which is encouraging...
 save_predictions_during_training = True  # set whether to save images of predictions at each epoch end during training
 
 batch_size = 16
