@@ -217,7 +217,7 @@ def write_sample_imgs(X_contrast=(0,100)):
     files = glob.glob(os.path.join(cfg.data_dir, 'training_data',  '*.npz'))
 
     for f in files:
-        data = np.load(f)
+        data = np.load(f, allow_pickle=True)
         X_mat = np.stack(data['X'][()].values(), axis=2)
         y_mat = np.stack(data['y'][()].values(), axis=2)
         file_name = os.path.join(cfg.data_dir, 'training_data', os.path.splitext(f)[0] + '.png')
