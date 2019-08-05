@@ -12,16 +12,21 @@ for d in cfg.datasets:
 
     # get summary images
     folder = os.path.join(cfg.data_dir, 'datasets', 'images_' + d)
+    
+    # Define the batches
     total_frames = len(glob.glob(os.path.join(folder, '*.tif')))
     batch_inds = np.arange(0, total_frames, cfg.summary_frames)
 
-    # initialize image stack
+    # Get the size of the images and initialize the iamge stack
     img0 = utils.get_frames(folder, frame_numbers=[0])
     height, width = img0.shape
-
+    
+    # Define the number of batches
     batches = min(total_frames // cfg.summary_frames, cfg.max_batches)
-
+    
     # X = dict.fromkeys(['corr', 'mean', 'median', 'max', 'std'], np.zeros((batches, _.shape[0], _.shape[1])))
+    
+    # Initialize the summary images
     summary_titles = ['corr', 'mean', 'median', 'max', 'std']
     X = {key: np.zeros((batches, height, width)) for key in summary_titles}
 
@@ -45,7 +50,8 @@ for d in cfg.datasets:
 
     # get targets
     y = utils.get_targets(os.path.join(cfg.data_dir, 'labels', d),
-                          collapse_masks=True, centroid_radius=3, border_thickness=cfg.border_thickness)
+        collapse_masks=True, centroid_radius=3, 
+        border_thickness=cfg.border_thickness)
 
     # store data for model training
     training_data_folder = os.path.join(cfg.data_dir, 'training_data')
