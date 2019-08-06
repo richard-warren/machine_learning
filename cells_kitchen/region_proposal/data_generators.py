@@ -31,7 +31,7 @@ class DataGenerator(Sequence):
         self.data = pd.DataFrame(index=datasets, columns=['X', 'y', 'corner_max'])
         for d in datasets:
 
-            data_sub = np.load(os.path.join(cfg.data_dir, 'training_data', d + '.npz'))
+            data_sub = np.load(os.path.join(cfg.data_dir, 'training_data', d + '.npz'), allow_pickle=True)
             _ = data_sub['X'][()][cfg.X_layers[0]]
             corner_max = (_.shape[0] - subframe_size[0],
                           _.shape[1] - subframe_size[1])  # subframe corner can be no further than corner_max
