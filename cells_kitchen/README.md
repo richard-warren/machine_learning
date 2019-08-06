@@ -10,9 +10,20 @@ applies a segmentation network to subframes centered at maxima of segmentation f
 ## instructions
 
 ### setup
-make local data directory containing training videos and labels. the directory should have the following subdirectories:
-   * datasets: contains folders for each training video, with folders named 'images_J115', 'image_J123', etc.
-   * labels: contains folders with labels for each each training video, with format 'J115', J123', etc.   
+download data
+   * download and unzip the file WEBSITE_basic.zip from this link: https://zenodo.org/record/1659149#.XUoKHHFKjMV
+   * download each images_DATASET_NAME.zip from the same link.
+   * see here for more info: https://github.com/flatironinstitute/CaImAn/tree/master/use_cases/eLife_scripts
+
+create and populate a local data directory
+   * create a directory. you can call it whatever you want. it will be called DATA_DIRECTORY below.
+   * create subdirectories "datasets" and "labels" within DATA_DIRECTORY
+   * copy in the data from WEBSITE_basic.zip. For each dataset (e.g., J115, N.00.00), do the following:
+      * copy images_DATASET_NAME.zip to DATA_DIRECTORY/datasets. unzip it. it will create a directory called images_DATASET_NAME, full of tif files. you can delete the zip file.
+      * copy WEBSITE/DATASET_NAME/info.json to DATA_DIRECTORY/labels/DATASET_NAME/
+   * after this, for each DATASET_NAME, there should be:
+      * a bunch of *.tif files in DATA_DIRECTORY/datasets/images_DATASET_NAME
+      * an info.json file in DATA_DIRECTORY/labels/DATASET_NAME
 
 edit region_proposal/config.py
    * data_dir: change to reflect the location of the data directory
