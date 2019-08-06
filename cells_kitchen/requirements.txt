@@ -6,3 +6,6 @@ matplotlib
 #tifffile=2019.7.26=pypi_0 # do pip install tifffile for this one
 ipdb=0.12.2=py_0
 pillow
+keras
+pandas
+#losswise=3.9=pypi_0 # do pip install losswise for this one
