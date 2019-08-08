@@ -1,10 +1,13 @@
 from keras.utils import Sequence
 import numpy as np
 import pandas as pd
-import config as cfg
+# import config as cfg
+from instance_segmentation import config as cfg
 import os
 import cv2
 import ipdb
+from scipy.ndimage.measurements import center_of_mass
+import cv2
 
 
 class DataGenerator(Sequence):
@@ -12,35 +15,40 @@ class DataGenerator(Sequence):
     each call returns stack of X and ys, whers stack contains batch_size images randomly selected for datasets
     each frame will be square subframe of random size, but no larger than smallest dataset
     locations in frame will also be random
-    todo: subframe size randomize // random rotation // random scaling
     '''
 
-    def __init__(self, datasets, batch_size=8, subframe_size=(100, 100), normalize_subframes=False, epoch_size=1,
-                 rotation=True, scaling=(1, 1)):
-        # initialization
+    def __init__(self, datasets, batch_size=8, subframe_size=(40, 40), epoch_size=64, rotation=True, scaling=(1, 1),
+                 fraction_positive_egs=.8, jitter=4, negative_eg_distance=8):
 
+        # initialization
         self.datasets = datasets
         self.batch_size = batch_size
         self.subframe_size = subframe_size
-        self.normalize_subframes = normalize_subframes
         self.epoch_size = epoch_size
         self.rotation = rotation
         self.scaling = scaling
 
         # load features and labels into DataFrame
-        self.data = pd.DataFrame(index=datasets, columns=['X', 'y', 'corner_max'])
+        self.data = pd.DataFrame(index=datasets, columns=['X', 'y', 'centroid_mask'])  # centroid mask is
         for d in datasets:
 
-            data_sub = np.load(os.path.join(cfg.data_dir, 'training_data', d + '.npz'))
-            _ = data_sub['X'][()][cfg.X_layers[0]]
-            corner_max = (_.shape[0] - subframe_size[0],
-                          _.shape[1] - subframe_size[1])  # subframe corner can be no further than corner_max
+            data_sub = np.load(os.path.join(cfg.data_dir, 'training_data', d + '.npz'), allow_pickle=True)
             X = np.stack([data_sub['X'][()][k] for k in cfg.X_layers], axis=2)
-            y = np.stack([data_sub['y'][()][k] for k in cfg.y_layers], axis=2)
-            self.data.loc[d, :] = (X, y, corner_max)
+            y = data_sub['neuron_masks']
+
+            # get centroid mask, which is used to determine which pixels are negative_eg_distance from another neuron's
+            # center of mass // mask is logical matrix with ones everywhere except circles centered at each neuron's
+            # center of mass
+            centroid_mask = np.zeros(X.shape[:2], dtype='uint8')
+            for n in range(y.shape[0]):  # loop across neurons
+                center = np.round(center_of_mass(y[n])).astype('int')
+                centroid_mask = cv2.circle(centroid_mask, (center[1], center[0]), negative_eg_distance, 1, thickness=-1)
+            centroid_mask = np.invert(centroid_mask.astype('bool'))
+
+            self.data.loc[d, :] = (X, y, centroid_mask)
 
         self.shape_X = (batch_size,) + subframe_size + (self.data.loc[datasets[0], 'X'].shape[-1],)  # batch size X height X width X depth
-        self.shape_y = (batch_size,) + subframe_size + (self.data.loc[datasets[0], 'y'].shape[-1],)
+        self.shape_y = (batch_size,) + subframe_size
 
     def __getitem__(self, index):
 

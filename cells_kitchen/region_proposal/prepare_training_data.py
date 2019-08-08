@@ -1,5 +1,4 @@
 import glob
-from .. import config as cfg_main
 import config as cfg
 import numpy as np
 import os
@@ -17,11 +16,10 @@ for d in cfg.datasets:
     batch_inds = np.arange(0, total_frames, cfg.summary_frames)
 
     # initialize image stack
-    _ = utils.get_frames(folder, frame_inds=0)
+    img0 = utils.get_frames(folder, frame_inds=0)
     batches = min(total_frames // cfg.summary_frames, cfg.max_batches)
-    # X = dict.fromkeys(['corr', 'mean', 'median', 'max', 'std'], np.zeros((batches, _.shape[0], _.shape[1])))
     summary_titles = ['corr', 'mean', 'median', 'max', 'std']
-    X = {key: np.zeros((batches, _.shape[0], _.shape[1])) for key in summary_titles}
+    X = {key: np.zeros((batches, img0.shape[0], img0.shape[1])) for key in summary_titles}
 
     # get summary images for each batch in video
     for b in tqdm(range(batches)):
@@ -41,14 +39,20 @@ for d in cfg.datasets:
     X['std'] = utils.scale_img(X['std'].mean(0))
 
     # get targets
-    y = utils.get_targets(os.path.join(cfg.data_dir, 'labels', d),
-                          collapse_masks=True, centroid_radius=3, border_thickness=cfg.border_thickness)
+    y = utils.get_targets(
+        os.path.join(cfg.data_dir, 'labels', d), collapse_masks=True,
+        centroid_radius=3, border_thickness=cfg.border_thickness)
+
+    # get tensor of masks for each individual neuron (used by segmentation network only)
+    neuron_masks = utils.get_targets(
+        os.path.join(cfg.data_dir, 'labels', d), collapse_masks=False)
+    neuron_masks = neuron_masks['somas']  # keep only the soma masks
 
     # store data for model training
     training_data_folder = os.path.join(cfg.data_dir, 'training_data')
     if not os.path.exists(training_data_folder):
         os.makedirs(training_data_folder)
-    np.savez(os.path.join(training_data_folder, d), X=X, y=y)
+    np.savez(os.path.join(training_data_folder, d), X=X, y=y, neuron_masks=neuron_masks)
 
 # write sample images to disk
 utils.write_sample_imgs(X_contrast=(5, 99))
