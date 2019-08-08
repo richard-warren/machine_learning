@@ -1,4 +1,5 @@
 import glob
+from .. import config as cfg_main
 import config as cfg
 import numpy as np
 import os
