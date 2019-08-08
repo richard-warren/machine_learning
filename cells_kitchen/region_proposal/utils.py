@@ -13,20 +13,44 @@ from PIL import Image, ImageDraw, ImageFont
 import config as cfg
 
 
-def get_frames(folder, frame_inds=0, frame_num=False):
-    """
-    gets stack of images from folder containing tiff files // if frame_inds is given, these are the frames
-    included in stack // otherwise, frame_num evenly spaced images are returned in the stack
-    """
+def get_frames(folder, frame_numbers=None):
+    """Gets stack of images from folder containing tiff files 
+    
+    folder : path to directory containing images ending in ".tif"
+    
+    frame_numbers : None, int, or list of integers
+        If None, returns all images.
+        If a list of integers, returns the corresponding images.
+        If an integer, returns that many evenly spaced images.
 
+    Returns : array of size (n_images, width, height)
+    """
+    # Get list of files in the directory
     files = glob.glob(os.path.join(folder, '*.tif'))
-    if frame_num:
-        frame_num = min(len(files), frame_num, 1500)
-        frame_inds = np.floor(np.linspace(0, len(files)-1, frame_num)).astype('int16')
-    try:
-        imgs = tifffile.imread(np.array(files)[frame_inds].tolist())
-    except:
-        ipdb.set_trace()
+    
+    # Error if no files found
+    if len(files) == 0:
+        raise IOError("no *.tif files found in %s" % folder)
+    
+    # Determine which to keep
+    if frame_numbers is None:
+        # Keep all of them
+        load_files = files
+    
+    elif hasattr(frame_numbers, '__len__'):
+        # Keep the ones specified by the list
+        load_files = list(np.asarray(files)[frame_numbers])
+    
+    else:
+        # Keep that many evenly spaced
+        indices = np.floor(
+            np.linspace(0, len(files) - 1, frame_numbers)
+            ).astype(np.int)
+        
+        load_files = list(np.asarray(files)[indices])
+
+    # Load them
+    imgs = tifffile.imread(load_files)
 
     return imgs
 
@@ -193,7 +217,7 @@ def write_sample_imgs(X_contrast=(0,100)):
     files = glob.glob(os.path.join(cfg.data_dir, 'training_data',  '*.npz'))
 
     for f in files:
-        data = np.load(f)
+        data = np.load(f, allow_pickle=True)
         X_mat = np.stack(data['X'][()].values(), axis=2)
         y_mat = np.stack(data['y'][()].values(), axis=2)
         file_name = os.path.join(cfg.data_dir, 'training_data', os.path.splitext(f)[0] + '.png')
