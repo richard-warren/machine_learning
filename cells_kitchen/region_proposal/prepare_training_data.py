@@ -49,15 +49,20 @@ for d in cfg.datasets:
     X['std'] = utils.scale_img(X['std'].mean(0))
 
     # get targets
-    y = utils.get_targets(os.path.join(cfg.data_dir, 'labels', d),
-        collapse_masks=True, centroid_radius=3, 
-        border_thickness=cfg.border_thickness)
+    y = utils.get_targets(
+        os.path.join(cfg.data_dir, 'labels', d), collapse_masks=True,
+        centroid_radius=3, border_thickness=cfg.border_thickness)
+
+    # get tensor of masks for each individual neuron (used by segmentation network only)
+    neuron_masks = utils.get_targets(
+        os.path.join(cfg.data_dir, 'labels', d), collapse_masks=False)
+    neuron_masks = neuron_masks['somas']  # keep only the soma masks
 
     # store data for model training
     training_data_folder = os.path.join(cfg.data_dir, 'training_data')
     if not os.path.exists(training_data_folder):
         os.makedirs(training_data_folder)
-    np.savez(os.path.join(training_data_folder, d), X=X, y=y)
+    np.savez(os.path.join(training_data_folder, d), X=X, y=y, neuron_masks=neuron_masks)
 
 # write sample images to disk
 utils.write_sample_imgs(X_contrast=(5, 99))
