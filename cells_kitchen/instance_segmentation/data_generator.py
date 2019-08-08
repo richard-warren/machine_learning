@@ -1,8 +1,7 @@
 from keras.utils import Sequence
 import numpy as np
 import pandas as pd
-# import config as cfg
-from instance_segmentation import config as cfg
+from . import config as cfg
 import os
 import cv2
 import ipdb
