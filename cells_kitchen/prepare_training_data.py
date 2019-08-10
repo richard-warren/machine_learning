@@ -1,8 +1,8 @@
+from cells_kitchen import config as cfg
+from cells_kitchen import utils
 import glob
-import config as cfg
 import numpy as np
 import os
-import utils
 from tqdm import tqdm
 import ipdb as ipdb
 
@@ -41,7 +41,7 @@ for d in cfg.datasets:
     # get targets
     y = utils.get_targets(
         os.path.join(cfg.data_dir, 'labels', d), collapse_masks=True,
-        centroid_radius=3, border_thickness=cfg.border_thickness)
+        centroid_radius=cfg.centroid_radius, border_thickness=cfg.border_thickness)
 
     # get tensor of masks for each individual neuron (used by segmentation network only)
     neuron_masks = utils.get_targets(

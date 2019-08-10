@@ -1,28 +1,26 @@
+from cells_kitchen.config import data_dir
+import cells_kitchen.region_proposal.config as cfg
 from keras.utils import Sequence
 import numpy as np
 import pandas as pd
-import config as cfg
 import os
 import cv2
-import ipdb
 
 
 class DataGenerator(Sequence):
     '''
-    each call returns stack of X and ys, whers stack contains batch_size images randomly selected for datasets
+    each call returns stack of X and ys, where stack contains batch_size images randomly selected for datasets
     each frame will be square subframe of random size, but no larger than smallest dataset
     locations in frame will also be random
-    todo: subframe size randomize // random rotation // random scaling
     '''
 
-    def __init__(self, datasets, batch_size=8, subframe_size=(100, 100), normalize_subframes=False, epoch_size=1,
+    def __init__(self, datasets, batch_size=8, subframe_size=(100, 100), epoch_size=1,
                  rotation=True, scaling=(1, 1)):
         # initialization
 
         self.datasets = datasets
         self.batch_size = batch_size
         self.subframe_size = subframe_size
-        self.normalize_subframes = normalize_subframes
         self.epoch_size = epoch_size
         self.rotation = rotation
         self.scaling = scaling
@@ -31,7 +29,7 @@ class DataGenerator(Sequence):
         self.data = pd.DataFrame(index=datasets, columns=['X', 'y', 'corner_max'])
         for d in datasets:
 
-            data_sub = np.load(os.path.join(cfg.data_dir, 'training_data', d + '.npz'), allow_pickle=True)
+            data_sub = np.load(os.path.join(data_dir, 'training_data', d + '.npz'), allow_pickle=True)
             _ = data_sub['X'][()][cfg.X_layers[0]]
             corner_max = (_.shape[0] - subframe_size[0],
                           _.shape[1] - subframe_size[1])  # subframe corner can be no further than corner_max
@@ -63,12 +61,6 @@ class DataGenerator(Sequence):
             if rotations:
                 X = np.rot90(X, rotations, axes=(1, 2))
                 y = np.rot90(y, rotations, axes=(1, 2))
-
-        # normalize
-        if self.normalize_subframes:
-            for i in range(X.shape[0]):
-                for j in range(X.shape[-1]):
-                    X[i, :, :, j] = (X[i, :, :, j] - np.mean(X[i, :, :, j])) / np.std(X[i, :, :, j])
 
         # rescale
         if self.scaling != (1, 1):
