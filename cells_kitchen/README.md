@@ -10,6 +10,8 @@ applies a segmentation network to subframes centered at maxima of segmentation f
 ## instructions
 
 ### setup
+start by adding the directory containing 'cells_kitchen' to PYTHONPATH (should i use pip install -e for this instead???)
+
 make local data directory containing training videos and labels. the directory should have the following subdirectories:
    * datasets: contains folders for each training video, with folders named 'images_J115', 'image_J123', etc.
    * labels: contains folders with labels for each each training video, with format 'J115', J123', etc.   

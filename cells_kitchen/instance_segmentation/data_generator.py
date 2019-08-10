@@ -1,7 +1,7 @@
 from keras.utils import Sequence
 import numpy as np
 import pandas as pd
-from cells_kitchen.instance_segmentation import config
+from cells_kitchen.instance_segmentation import config as cfg
 import os
 import cv2
 import ipdb
