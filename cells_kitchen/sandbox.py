@@ -17,7 +17,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 ##
-dataset_ind = 2
+test = gen[0]
+
+plt.close('all')
+fig, ax = plt.subplots(1, 8)
+for i in range(8):
+    cat = np.concatenate((test[0][i,:,:,0], test[0][i,:,:,1], test[0][i,:,:,2], test[1][i,:,:]), axis=0)
+    # cat = np.concatenate((test[1][i, :, :], test[1][i, :, :]), axis=0)
+    ax[i].imshow(cat)
+
+
+##
+dataset_ind = 0
 plt.close('all')
 fig, ax = plt.subplots(1, 3, sharex=True, sharey=True)
 ax[0].imshow(gen.data.negative_eg_mask[dataset_ind])
