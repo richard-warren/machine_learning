@@ -8,4 +8,18 @@ vid_num = 0
 
 preview_vid(prefix+'K53', frames_to_show=np.inf, fps=100)
 
-## check out neuron masks
+## check out instance_segmentation DataGenerator...
+
+from cells_kitchen.instance_segmentation.data_generator import DataGenerator
+from cells_kitchen.config import datasets
+gen = DataGenerator(datasets)
+import matplotlib.pyplot as plt
+import numpy as np
+
+##
+dataset_ind = 2
+plt.close('all')
+fig, ax = plt.subplots(1, 3, sharex=True, sharey=True)
+ax[0].imshow(gen.data.negative_eg_mask[dataset_ind])
+ax[1].imshow(gen.data.positive_eg_mask[dataset_ind])
+ax[2].imshow(np.max(gen.data.y[dataset_ind], axis=0))

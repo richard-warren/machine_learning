@@ -1,7 +1,8 @@
+from cells_kitchen.config import data_dir
+from cells_kitchen.instance_segmentation import config as cfg
 from keras.utils import Sequence
 import numpy as np
 import pandas as pd
-from cells_kitchen.instance_segmentation import config as cfg
 import os
 import cv2
 import ipdb
@@ -28,23 +29,25 @@ class DataGenerator(Sequence):
         self.scaling = scaling
 
         # load features and labels into DataFrame
-        self.data = pd.DataFrame(index=datasets, columns=['X', 'y', 'centroid_mask'])  # centroid mask is
+        self.data = pd.DataFrame(index=datasets, columns=['X', 'y', 'positive_eg_mask', 'negative_eg_mask'])
         for d in datasets:
 
-            data_sub = np.load(os.path.join(cfg.data_dir, 'training_data', d + '.npz'), allow_pickle=True)
+            data_sub = np.load(os.path.join(data_dir, 'training_data', d + '.npz'), allow_pickle=True)
             X = np.stack([data_sub['X'][()][k] for k in cfg.X_layers], axis=2)
             y = data_sub['neuron_masks']
 
-            # get centroid mask, which is used to determine which pixels are negative_eg_distance from another neuron's
-            # center of mass // mask is logical matrix with ones everywhere except circles centered at each neuron's
-            # center of mass
-            centroid_mask = np.zeros(X.shape[:2], dtype='uint8')
+            # get logical masks representing pixels where pos and neg egs can be centered at
+            negative_eg_mask = np.zeros(X.shape[:2], dtype='uint8')
+            positive_eg_mask = np.zeros(X.shape[:2], dtype='uint8')
             for n in range(y.shape[0]):  # loop across neurons
                 center = np.round(center_of_mass(y[n])).astype('int')
-                centroid_mask = cv2.circle(centroid_mask, (center[1], center[0]), negative_eg_distance, 1, thickness=-1)
-            centroid_mask = np.invert(centroid_mask.astype('bool'))
+                negative_eg_mask = cv2.circle(
+                    negative_eg_mask, (center[1], center[0]), negative_eg_distance, 1, thickness=-1)
+                positive_eg_mask = cv2.circle(
+                    positive_eg_mask, (center[1], center[0]), jitter, 1, thickness=-1)
+            negative_eg_mask = np.invert(negative_eg_mask.astype('bool'))
 
-            self.data.loc[d, :] = (X, y, centroid_mask)
+            self.data.loc[d, :] = (X, y, positive_eg_mask.astype('bool'), negative_eg_mask.astype('bool'))
 
         self.shape_X = (batch_size,) + subframe_size + (self.data.loc[datasets[0], 'X'].shape[-1],)  # batch size X height X width X depth
         self.shape_y = (batch_size,) + subframe_size
@@ -52,13 +55,10 @@ class DataGenerator(Sequence):
     def __getitem__(self, index):
 
         # gets data for batch
-        batch_inds = np.random.randint(0, len(self.datasets), size=self.batch_size)  # indices of datasets to be used in batch
         X = np.zeros(self.shape_X)
         y = np.zeros(self.shape_y)
 
-        for i, b in enumerate(batch_inds):
-            corner = (np.random.randint(self.data.loc[self.datasets[b], 'corner_max'][0]),
-                      np.random.randint(self.data.loc[self.datasets[b], 'corner_max'][1]))
+        for i, in range(self.batch_size):
             x_inds = slice(corner[0], corner[0]+self.subframe_size[0])
             y_inds = slice(corner[1], corner[1]+self.subframe_size[1])
             X[i] = self.data.loc[self.datasets[b], 'X'][x_inds, y_inds]

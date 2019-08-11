@@ -20,10 +20,10 @@ train_datasets = ['K53', 'J115', 'J123']
 X_layers = ['corr', 'median', 'std']  # summary images to include as input to the network // ['corr', 'mean', 'median', 'max', 'std']
 y_layers = ['somas', 'centroids']  # summary images to include as target for the network // ['somas', 'borders', 'centroids']
 high_pass_sigma = 15  # std of gaussian based high pass filtering of inptus // set to False to turn off high pass filtering
-subframe_size = (160, 160)  # each dimension must be divisible by four
 filters = 16  # seemed to work with as little as 16 // 8 was a little blurrier, which is encouraging...
 
 # training
+subframe_size = (160, 160)  # each dimension must be divisible by four
 use_cpu = False  # whether to use CPU instead of GPU for training
 aug_rotation = True  # whether to apply 0, 90, 180, or 270 degree rotations randomly
 aug_scaling = (.75, 1.25)  # min and max image scaling // set to (1, 1) for no scaling
