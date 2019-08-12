@@ -10,11 +10,11 @@ preview_vid(prefix+'K53', frames_to_show=np.inf, fps=100)
 
 ## check out instance_segmentation DataGenerator...
 
-from cells_kitchen.instance_segmentation.data_generator import DataGenerator
+# from cells_kitchen.instance_segmentation.data_generator import DataGenerator
 from cells_kitchen.config import datasets
-gen = DataGenerator(datasets)
 import matplotlib.pyplot as plt
 import numpy as np
+gen = DataGenerator(datasets)
 
 ##
 test = gen[0]
@@ -22,8 +22,7 @@ test = gen[0]
 plt.close('all')
 fig, ax = plt.subplots(1, 8)
 for i in range(8):
-    cat = np.concatenate((test[0][i,:,:,0], test[0][i,:,:,1], test[0][i,:,:,2], test[1][i,:,:]), axis=0)
-    # cat = np.concatenate((test[1][i, :, :], test[1][i, :, :]), axis=0)
+    cat = np.concatenate((test[0][i,:,:,0], test[0][i,:,:,1], test[0][i,:,:,2], test[1]['mask'][i,:,:]), axis=0)
     ax[i].imshow(cat)
 
 
