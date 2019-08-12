@@ -96,6 +96,7 @@ class DataGenerator(Sequence):
                 except ValueError:
                     pass
 
+        y = np.expand_dims(y, -1)  # a temporary hack to make keras stop complaining
         return X, {'mask': y, 'class': is_neuron}
 
     def __len__(self):

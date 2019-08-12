@@ -1,10 +1,10 @@
 # network
 test_datasets = ['N.00.00', 'N.01.01', 'N.02.00', 'N.03.00.t', 'N.04.00.t', 'YST']
-train_datasets = ['K53', 'J115', 'J123']
+train_datasets = test_datasets.copy()  # ['K53', 'J115', 'J123']
 X_layers = ['corr', 'median', 'std']  # summary images to include as input to the network // ['corr', 'mean', 'median', 'max', 'std']
 high_pass_sigma = 15  # std of gaussian based high pass filtering of inptus // set to False to turn off high pass filtering
-subframe_size = (160, 160)  # each dimension must be divisible by four
-filters = 16  # seemed to work with as little as 16 // 8 was a little blurrier, which is encouraging...
+subframe_size = (64, 64)  # each dimension must be divisible by four
+filters = 8  # seemed to work with as little as 16 // 8 was a little blurrier, which is encouraging...
 
 # training
 fraction_positive_egs = .8  # fraction of training examples with an object in the center
