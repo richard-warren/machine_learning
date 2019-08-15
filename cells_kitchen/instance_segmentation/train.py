@@ -11,6 +11,7 @@ from datetime import datetime
 import os
 import pickle
 from glob import glob
+import ipdb
 
 if cfg.losswise_api_key:
     losswise.set_api_key(cfg.losswise_api_key)  # set up losswise.com visualization
@@ -28,19 +29,16 @@ test_generator = dg.DataGenerator(
 # create model
 input_shape = (cfg.subframe_size[0], cfg.subframe_size[1], train_generator.shape_X[-1])
 model = models.segnet(
-    input_shape, filters=cfg.filters, kernel_initializer='glorot_normal',
-    batch_normalization=cfg.batch_normalization)
-
+    input_shape, filters=cfg.filters, lr_init=cfg.lr_init, batch_normalization=cfg.batch_normalization,
+    mask_weight=cfg.mask_weight)
 
 # get predictions for single batch
 def save_prediction_imgs(generator, model_in, folder):
-    pass
-    # X, y = generator[0]
-    # y_pred = model_in.predict(X)
-    # for i in range(X.shape[0]):
-    #     file = os.path.join(folder, 'prediction%i.png' % i)
-    #     save_prediction_img(file, X[i], y[i], y_pred[i], X_contrast=(0, 100))
-
+    X, y = generator[0]
+    y_pred = model_in.predict(X)
+    for i in range(X.shape[0]):
+        file = os.path.join(folder, 'prediction%i.png' % i)
+        save_prediction_img(file, X[i], y['mask'][i], y_pred[0][i], X_contrast=(0, 100))
 
 # train, omg!
 if cfg.use_cpu:

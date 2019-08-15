@@ -26,8 +26,7 @@ test_generator = dg.DataGenerator(
 # create model
 model = models.unet(
     (None, None, train_generator.shape_X[-1]), train_generator.shape_y[-1], filters=cfg.filters,
-    kernel_initializer='glorot_normal', batch_normalization=cfg.batch_normalization,
-    high_pass_sigma=cfg.high_pass_sigma)
+    lr_init=cfg.lr_init, batch_normalization=cfg.batch_normalization, high_pass_sigma=cfg.high_pass_sigma)
 
 
 # get predictions for single batch
