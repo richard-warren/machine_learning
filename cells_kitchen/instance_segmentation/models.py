@@ -38,8 +38,9 @@ def segnet(input_size, filters=8, lr_init=.001, kernel_initializer='glorot_norma
     # classification branch here!
     # predicts whether there neuron is centered in subframe
     flat = Flatten()(drop4)
-    fc1 = Dense(1024, activation='relu')(flat)
-    is_neuron = Dense(1, activation='sigmoid', name='class')(fc1)
+    fc1 = Dense(512, activation='relu')(flat)
+    fc2 = Dense(1024, activation='relu')(fc1)
+    is_neuron = Dense(1, activation='sigmoid', name='class')(fc2)
 
     # 1/4
     up7 = Conv2D(filters*4, 2, activation='relu', padding='same', kernel_initializer=kernel_initializer)(
