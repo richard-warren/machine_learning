@@ -97,7 +97,7 @@ class DataGenerator(Sequence):
                     pass
 
         y = np.expand_dims(y, -1)  # a temporary hack to make keras stop complaining
-        return X, {'mask': y, 'class': is_neuron}
+        return X, [y, is_neuron], [is_neuron, np.ones(is_neuron.shape)]  # third output are sample weight // use is_neuron for sample wiehgts for mask, because we want to ignore negative examples in the mask backprop
 
     def __len__(self):
         return self.epoch_size

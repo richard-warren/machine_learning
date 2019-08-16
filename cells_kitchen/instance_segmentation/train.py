@@ -34,11 +34,16 @@ model = models.segnet(
 
 # get predictions for single batch
 def save_prediction_imgs(generator, model_in, folder):
-    X, y = generator[0]
+    # delete old images
+    imgs_to_delete = glob(os.path.join(folder, '*.png'))[:-1]
+    [os.remove(img) for img in iter(imgs_to_delete)]
+
+    # write new images
+    X, y, weights = generator[0]
     y_pred = model_in.predict(X)
     for i in range(X.shape[0]):
-        file = os.path.join(folder, 'prediction%i.png' % i)
-        save_prediction_img(file, X[i], y['mask'][i], y_pred[0][i], X_contrast=(0, 100))
+        file = os.path.join(folder, 'prediction%i_%.2f.png' % (i, y_pred[1][i]))
+        save_prediction_img(file, X[i], y[0][i], y_pred[0][i], X_contrast=(0, 100))
 
 # train, omg!
 if cfg.use_cpu:

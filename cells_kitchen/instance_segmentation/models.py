@@ -35,13 +35,6 @@ def segnet(input_size, filters=8, lr_init=.001, kernel_initializer='glorot_norma
     conv4 = BatchNormalization()(conv4) if batch_normalization else conv4
     drop4 = SpatialDropout2D(0.5)(conv4)
 
-    # classification branch here!
-    # predicts whether there neuron is centered in subframe
-    flat = Flatten()(drop4)
-    fc1 = Dense(512, activation='relu')(flat)
-    fc2 = Dense(1024, activation='relu')(fc1)
-    is_neuron = Dense(1, activation='sigmoid', name='class')(fc2)
-
     # 1/4
     up7 = Conv2D(filters*4, 2, activation='relu', padding='same', kernel_initializer=kernel_initializer)(
         UpSampling2D(size=(2, 2))(drop4))
@@ -70,13 +63,23 @@ def segnet(input_size, filters=8, lr_init=.001, kernel_initializer='glorot_norma
     # predict mask
     mask = Conv2D(1, 1, activation='sigmoid', name='mask')(conv9)
 
+    # predict class, whether there neuron is centered in subframe
+    # draws from middle of network
+    flat = Flatten()(conv4)
+    fc1 = Dense(512, activation='relu')(flat)
+    fc1 = BatchNormalization()(fc1)
+    fc2 = Dense(1024, activation='relu')(fc1)
+    fc2 = BatchNormalization()(fc2)
+    is_neuron = Dense(1, activation='sigmoid', name='class')(fc2)
+
     # compile
     model = Model(input=inputs, output=[mask, is_neuron], name='segnet')
     losses = {'mask': 'binary_crossentropy',
               'class': 'binary_crossentropy'}
+    metrics = {'mask': [],
+               'class': ['accuracy']}
     loss_weights = {'mask': mask_weight, 'class': 1-mask_weight}
-    model.compile(loss=losses, loss_weights=loss_weights, optimizer=Adam(lr=lr_init))
+    model.compile(loss=losses, loss_weights=loss_weights, optimizer=Adam(lr=lr_init), metrics=metrics)
     model.summary()
 
     return model
-
