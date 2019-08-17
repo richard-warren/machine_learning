@@ -14,11 +14,11 @@ preview_vid(prefix+'K53', frames_to_show=np.inf, fps=100)
 from cells_kitchen.config import datasets
 import matplotlib.pyplot as plt
 import numpy as np
-gen = DataGenerator(datasets)
+gen = DataGenerator(datasets, scaling=(.5, 1.5))
 
 ##
 test = gen[0]
-
+##
 plt.close('all')
 fig, ax = plt.subplots(1, 8)
 for i in range(8):

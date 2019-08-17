@@ -2,7 +2,6 @@ from keras.models import Model
 from keras.layers import Input, Conv2D, MaxPooling2D, UpSampling2D, SpatialDropout2D,\
     concatenate, BatchNormalization, Flatten, Dense
 from keras.optimizers import Adam
-from keras.backend import squeeze
 
 
 def segnet(input_size, filters=8, lr_init=.001, kernel_initializer='glorot_normal', batch_normalization=False,

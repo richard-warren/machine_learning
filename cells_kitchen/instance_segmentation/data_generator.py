@@ -30,8 +30,6 @@ class DataGenerator(Sequence):
         self.fraction_positive_egs = fraction_positive_egs
         self.jitter = jitter
         self.negative_eg_distance = negative_eg_distance
-        self.dy = np.floor(subframe_size[0] / 2).astype('uint8')
-        self.dx = np.floor(subframe_size[1] / 2).astype('uint8')
 
         # load features and labels into DataFrame
         self.data = pd.DataFrame(index=datasets, columns=['X', 'y', 'negative_eg_inds'])
@@ -68,16 +66,25 @@ class DataGenerator(Sequence):
             # select random dataset, eg type, and neuron if positive eg
             dataset_ind = np.random.randint(len(self.datasets))
             is_neuron[i] = self.fraction_positive_egs > np.random.uniform(0, 1)  # decide whether this is a positive or negative example
-            found_subframe = False
+
+            # get subframe scaling
+            if self.scaling:
+                scale = np.random.uniform(2 - self.scaling[1], 2 - self.scaling[
+                    0])  # the 2 minus is bc taking a BIGGER subframe results in a SMALLER resized subframe
+            else:
+                scale = 1
+            dx = np.floor(self.subframe_size[1] * scale / 2).astype('uint8')  # dx and xy are half the width of subframe
+            dy = np.floor(self.subframe_size[0] * scale / 2).astype('uint8')
 
             # todo: better way of finding subframe within borders...
+            found_subframe = False
             while not found_subframe:
 
-                # select center of image
+                # pick subframe center
                 if is_neuron[i]:
                     neuron_ind = np.random.randint(self.data.y[dataset_ind].shape[0])
                     center = np.round(center_of_mass(self.data.y[dataset_ind][neuron_ind])).astype('int')
-                    jitter = np.random.randint(self.jitter, size=2)
+                    jitter = np.random.randint(-self.jitter, self.jitter+1, size=2)
                     center = center + jitter
                 else:
                     ind = np.random.randint(self.data.negative_eg_inds[dataset_ind].shape[0])
@@ -85,19 +92,36 @@ class DataGenerator(Sequence):
 
                 # extract subframe
                 try:
-                    x_inds = slice(center[1]-self.dx, center[1]+self.dx)
-                    y_inds = slice(center[0]-self.dy, center[0]+self.dy)
-                    X[i] = self.data.X[dataset_ind][y_inds, x_inds]
+                    x_inds = slice(center[1]-dx, center[1]+dx)
+                    y_inds = slice(center[0]-dy, center[0]+dy)
+
+                    X_temp = self.data.X[dataset_ind][y_inds, x_inds]
+
                     if is_neuron[i]:
-                        y[i] = self.data.y[dataset_ind][neuron_ind, y_inds, x_inds]
+                        y_temp = self.data.y[dataset_ind][neuron_ind, y_inds, x_inds]
                     else:
-                        y[i] = np.zeros(self.subframe_size)
+                        y_temp = np.zeros(self.subframe_size)
                     found_subframe = True
-                except ValueError:
+
+                    if self.scaling:
+                        X_temp = cv2.resize(X_temp, self.subframe_size)
+                        y_temp = cv2.resize(y_temp.astype('uint8'), self.subframe_size).astype('bool')
+
+                    X[i] = X_temp
+                    y[i] = y_temp
+
+                except:
                     pass
 
-        y = np.expand_dims(y, -1)  # a temporary hack to make keras stop complaining
-        return X, [y, is_neuron], [is_neuron, np.ones(is_neuron.shape)]  # third output are sample weight // use is_neuron for sample wiehgts for mask, because we want to ignore negative examples in the mask backprop
+        # rotate
+        if self.rotation:
+            rotations = np.random.randint(0, 4)  # number of 90 degree rotations to perform
+            if rotations:
+                X = np.rot90(X, rotations, axes=(1, 2))
+                y = np.rot90(y, rotations, axes=(1, 2))
+
+        y = np.expand_dims(y, -1)  # a temporary hack because keras expects multiple output channels
+        return X, [y, is_neuron], [is_neuron, np.ones(is_neuron.shape)]  # third output are sample weight // use is_neuron for sample wiehgts for mask, bc we ignore negative examples in the mask backprop
 
     def __len__(self):
         return self.epoch_size

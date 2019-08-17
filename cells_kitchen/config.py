@@ -1,3 +1,10 @@
+'''
+TODO:
+fix training data - why discrepancy btwn summary imgs and labels?
+max finding algo
+put everything together!
+'''
+
 # general
 data_dir = r'C:\Users\erica and rick\Desktop\cells_kitchen'
 
