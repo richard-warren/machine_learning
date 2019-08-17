@@ -14,7 +14,7 @@ preview_vid(prefix+'K53', frames_to_show=np.inf, fps=100)
 from cells_kitchen.config import datasets
 import matplotlib.pyplot as plt
 import numpy as np
-gen = DataGenerator(datasets, scaling=(.5, 1.5))
+gen = DataGenerator(datasets)
 
 ##
 test = gen[0]

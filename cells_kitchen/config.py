@@ -1,8 +1,14 @@
 '''
 TODO:
+fix breaking when only one output
+check neg eg segmentation network generator
 fix training data - why discrepancy btwn summary imgs and labels?
 max finding algo
 put everything together!
+visualize activations in network, eg high pass filter section
+copy config file to model folder to keep track of settings
+express parameters in um rather than pixels using dataset metadata
+dice loss function
 '''
 
 # general

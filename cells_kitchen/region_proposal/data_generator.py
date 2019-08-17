@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import os
 import cv2
+import ipdb
 
 
 class DataGenerator(Sequence):
@@ -70,9 +71,11 @@ class DataGenerator(Sequence):
             X_new = np.zeros((X.shape[0], shape_new[0], shape_new[1], X.shape[3]))
             y_new = np.zeros((y.shape[0], shape_new[0], shape_new[1], y.shape[3]))
             for i in range(self.batch_size):
-                X_new[i] = cv2.resize(X[i, :, :], shape_new)
-                y_new[i] = cv2.resize(y[i, :, :], shape_new)
-            X, y = [X_new.copy(), y_new.copy()]  # todo: is it necessary to copy these variables???
+                X_temp = cv2.resize(X[i], shape_new)  # opencv gets rid of singleton trailing dimension when only one input / output layer is used, so need to check this and re-add if necessary
+                y_temp = cv2.resize(y[i], shape_new)
+                X_new[i] = X_temp if np.ndim(X_temp) == 3 else np.expand_dims(X_temp, -1)
+                y_new[i] = y_temp if np.ndim(y_temp) == 3 else np.expand_dims(y_temp, -1)
+            X, y = [X_new, y_new]
 
         return X, y
 
