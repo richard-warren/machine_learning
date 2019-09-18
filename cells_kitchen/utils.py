@@ -3,12 +3,10 @@ import os
 import numpy as np
 from tqdm import tqdm
 from scipy.ndimage import convolve
-from scipy.stats import zscore
 import matplotlib.pyplot as plt
 import json
 import cv2
 import tifffile
-import ipdb
 from PIL import Image, ImageDraw, ImageFont
 import config as cfg
 
@@ -19,16 +17,13 @@ def get_frames(folder, frame_inds=0, frame_num=False):
     included in stack // otherwise, frame_num evenly spaced images are returned in the stack
     """
 
-    files = glob.glob(os.path.join(folder, '*.tif'))
+    files = glob.glob(os.path.join(folder, '*.tif*'))  # works for .tif AND .tiff files
     if frame_num:
         frame_num = min(len(files), frame_num, 1500)
         frame_inds = np.floor(np.linspace(0, len(files)-1, frame_num)).astype('int16')
-    try:
-        imgs = tifffile.imread(np.array(files)[frame_inds].tolist())
-    except:
-        ipdb.set_trace()
+    imgs = tifffile.imread(np.array(files)[frame_inds].tolist())
 
-    return imgs
+    return imgs.astype('float32')
 
 
 def preview_vid(folder, frames_to_show=100, fps=30, close_when_done=False):
@@ -96,10 +91,12 @@ def get_targets(folder, collapse_masks=False, centroid_radius=2, border_thicknes
 
     # get image dimensions
     with open(os.path.join(folder, 'info.json')) as f:
-        dimensions = json.load(f)['dimensions'][1:3]
+        dimensions = json.load(f)['dimensions']
+        dimensions = dimensions[0:2] if cfg.use_neurofinder else dimensions[1:3]
 
     # load labels
-    with open(os.path.join(folder, 'regions', 'consensus_regions.json')) as f:
+    file = os.path.join('regions', 'regions.json') if cfg.use_neurofinder else os.path.join('regions', 'consensus_regions.json')
+    with open(os.path.join(folder, file)) as f:
         cell_masks = [np.array(x['coordinates']) for x in json.load(f)]
 
     # compute masks for each neuron
@@ -190,13 +187,15 @@ def save_prediction_img(file, X, y, y_pred=None, height=800, X_contrast=(0,100),
 def write_sample_imgs(X_contrast=(0,100)):
     '''writes sample images for training and test data for all .npz files in training_data folder'''
 
-    files = glob.glob(os.path.join(cfg.data_dir, 'training_data',  '*.npz'))
+    print('writing sample summary images to disk! omg!')
+    subfolder = 'neurofinder' if cfg.use_neurofinder else 'caiman'
+    files = glob.glob(os.path.join(cfg.data_dir, 'training_data', subfolder, '*.npz'))
 
     for f in files:
         data = np.load(f)
         X_mat = np.stack(data['X'][()].values(), axis=2)
         y_mat = np.stack(data['y'][()].values(), axis=2)
-        file_name = os.path.join(cfg.data_dir, 'training_data', os.path.splitext(f)[0] + '.png')
+        file_name = os.path.join(cfg.data_dir, 'training_data', subfolder, os.path.splitext(f)[0] + '.png')
         save_prediction_img(file_name, X_mat, y_mat, X_contrast=X_contrast, column_titles=data['X'][()].keys())
 
 
