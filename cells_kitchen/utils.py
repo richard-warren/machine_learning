@@ -34,13 +34,14 @@ def preview_vid(folder, frames_to_show=100, fps=30, close_when_done=False):
     """
 
     # initialize window
-    im_plot = plt.imshow(np.zeros((1, 1), dtype='float32'), cmap='plasma', vmin=0, vmax=1)
+    im_plot = plt.imshow(np.zeros((1, 1), dtype='float32'), cmap='Greys', vmin=0, vmax=1)
     plt.show()
-    files = glob.glob(os.path.join(folder, '*.tif'))
+    files = glob.glob(os.path.join(folder, '*.tif*'))
     frames_to_show = min(frames_to_show, len(files))
 
     for f in tqdm(files[0:frames_to_show]):
-        frame = tifffile.imread(f)
+        frame = tifffile.imread(f).astype('float32')
+        frame = frame / np.max(frame)
         im_plot.set_data(frame)
         plt.pause(1/fps)
 
@@ -187,7 +188,7 @@ def save_prediction_img(file, X, y, y_pred=None, height=800, X_contrast=(0,100),
 def write_sample_imgs(X_contrast=(0,100)):
     '''writes sample images for training and test data for all .npz files in training_data folder'''
 
-    print('writing sample summary images to disk! omg!')
+    print('writing sample summary images to disk...')
     subfolder = 'neurofinder' if cfg.use_neurofinder else 'caiman'
     files = glob.glob(os.path.join(cfg.data_dir, 'training_data', subfolder, '*.npz'))
 
@@ -198,6 +199,39 @@ def write_sample_imgs(X_contrast=(0,100)):
         file_name = os.path.join(cfg.data_dir, 'training_data', subfolder, os.path.splitext(f)[0] + '.png')
         save_prediction_img(file_name, X_mat, y_mat, X_contrast=X_contrast, column_titles=data['X'][()].keys())
 
+
+def write_sample_border_imgs(channels=['corr'], height=800, contrast=(0,100)):
+
+    print('writing sample summary images with borders to disk...')
+
+    subfolder = 'neurofinder' if cfg.use_neurofinder else 'caiman'
+    files = glob.glob(os.path.join(cfg.data_dir, 'training_data', subfolder, '*.npz'))
+
+    for f in files:
+
+        # load data
+        data = np.load(f)
+        X = data['X'][()]
+        y = data['y'][()]
+
+        # restrict to requested channels, and borders only for y
+        X = dict((k, X[k]) for k in channels)  # restrict to requested channels
+        X = np.stack(X.values(), axis=2)
+        y = y['borders']  # restrict to requested channels
+
+        # add borders
+        img = np.zeros((y.shape[0], y.shape[1]*len(channels), 3))
+        for i in range(len(channels)):
+            temp = enhance_contrast(X[:,:,i], percentiles=contrast)
+            img[:, i*(X.shape[1]):(i+1)*X.shape[1], :] = add_contours(temp, y)
+
+        file_name = os.path.join(cfg.data_dir, 'training_data', subfolder, os.path.splitext(f)[0] + '_borders.png')
+
+        img = Image.fromarray((img * 255).astype('uint8'))
+        img = img.resize((int((img.width / img.height) * height), height), resample=Image.NEAREST)
+        img.save(file_name)
+
+    print('all done!')
 
 
 

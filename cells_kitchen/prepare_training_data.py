@@ -77,7 +77,8 @@ if __name__ == '__main__':
         [prep_training_data(d) for d in cfg.datasets]
 
     # write sample images to disk
-    utils.write_sample_imgs(X_contrast=(5, 99))
+    utils.write_sample_imgs(X_contrast=(1, 99))
+    utils.write_sample_border_imgs(channels=['corr', 'mean', 'median'], contrast=(1, 99))
     print('all done!')
 
 
