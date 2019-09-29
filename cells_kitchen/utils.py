@@ -8,7 +8,8 @@ import json
 import cv2
 import tifffile
 from PIL import Image, ImageDraw, ImageFont
-import config as cfg
+from cells_kitchen import config as cfg
+from scipy import signal
 
 
 def get_frames(folder, frame_inds=0, frame_num=False):
@@ -21,9 +22,9 @@ def get_frames(folder, frame_inds=0, frame_num=False):
     if frame_num:
         frame_num = min(len(files), frame_num, 1500)
         frame_inds = np.floor(np.linspace(0, len(files)-1, frame_num)).astype('int16')
-    imgs = tifffile.imread(np.array(files)[frame_inds].tolist())
+    imgs = tifffile.imread(np.array(files)[frame_inds].tolist()).astype('float32')
 
-    return imgs.astype('float32')
+    return imgs
 
 
 def preview_vid(folder, frames_to_show=100, fps=30, close_when_done=False):
@@ -38,6 +39,9 @@ def preview_vid(folder, frames_to_show=100, fps=30, close_when_done=False):
     plt.show()
     files = glob.glob(os.path.join(folder, '*.tif*'))
     frames_to_show = min(frames_to_show, len(files))
+
+    # get range
+    imgs = tifffile.imread(np.array(files)[1:100].tolist()).astype('float32')
 
     for f in tqdm(files[0:frames_to_show]):
         frame = tifffile.imread(f).astype('float32')
@@ -54,23 +58,28 @@ def get_correlation_image(imgs):
     given stack of images, returns image representing temporal correlation between each pixel and surrounding eight pixels
     """
 
-    imgs = imgs.copy()  # make sure we're pointing to a new object
+    # define kernel
+    # kernel = np.ones((3, 3), dtype='float32')
+    # kernel[1, 1] = 0
 
-    # define 8 neighbors filter
-    kernel = np.ones((3, 3), dtype='float32')
-    kernel[1, 1] = 0
+    # kernel = np.array([[0,1,0], [1,0,1], [0,1,0]], dtype='float32')
+
+    kernel = signal.gaussian(7, 3, sym=True)
+    kernel = np.outer(kernel, kernel)
+    kernel[3, 3] = 0
+
     mask = convolve(np.ones(imgs.shape[1:], dtype='float32'), kernel, mode='constant')
 
     # normalize image
-    # imgs = zscore(imgs, axis=0)
-    imgs -= np.mean(imgs, axis=0)
-    imgs_std = np.std(imgs, axis=0)
+    imgs_norm = imgs.copy()
+    imgs_norm -= np.mean(imgs_norm, axis=0)
+    imgs_std = np.std(imgs_norm, axis=0)
     imgs_std[imgs_std == 0] = np.inf
-    imgs /= imgs_std
+    imgs_norm /= imgs_std
 
     # compute correlation image
-    img_corr = convolve(imgs, kernel[np.newaxis, :], mode='constant') / mask
-    img_corr = imgs * img_corr
+    img_corr = convolve(imgs_norm, kernel[np.newaxis, :], mode='constant') / mask
+    img_corr = imgs_norm * img_corr
     img_corr = np.mean(img_corr, 0)
 
     return img_corr
@@ -79,9 +88,10 @@ def get_correlation_image(imgs):
 def scale_img(img):
     """ scales numpy array between 0 and 1"""
 
-    if np.ptp(img):
-        img = (img - np.min(img)) / np.ptp(img)
-    return img
+    img_scaled = img.copy()
+    if np.ptp(img_scaled):
+        img_scaled = (img_scaled - np.min(img_scaled)) / np.ptp(img_scaled)
+    return img_scaled
 
 
 def get_targets(folder, collapse_masks=False, centroid_radius=2, border_thickness=2):
@@ -138,11 +148,12 @@ def add_contours(img, contour, color=(1, 0, 0)):
 def enhance_contrast(img, percentiles=(5, 95)):
     """given 2D image, rescales the image between lower and upper percentile limits"""
 
+    img = img.copy()
     limits = np.percentile(img.flatten(), percentiles)
-    img = np.clip(img-limits[0], 0, limits[1]-limits[0]) / np.ptp(limits)
+    img_enhanced = np.clip(img-limits[0], 0, limits[1]-limits[0]) / np.ptp(limits)
     # img = np.clip(img, limits[0], limits[1]) / np.ptp(limits)
 
-    return img
+    return img_enhanced
 
 
 def save_prediction_img(file, X, y, y_pred=None, height=800, X_contrast=(0,100), column_titles=None):
