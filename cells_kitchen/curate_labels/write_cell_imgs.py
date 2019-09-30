@@ -9,7 +9,7 @@ import time
 
 # settings
 datasets = ['N.04.00.t', 'N.00.00', 'N.01.01', 'N.02.00', 'N.03.00.t', 'YST', 'K53', 'J115', 'J123']
-# datasets = ['N.04.00.t']  # caiman
+# datasets = ['YST', 'K53', 'J115', 'J123']  # caiman
 channels = ['corr', 'median']
 contrast = [1, 99.9]
 crop = 100
@@ -23,7 +23,7 @@ for dataset in datasets:
     # load summary images
     summary_imgs = np.load(os.path.join(cfg.data_dir, 'training_data', 'caiman', dataset + '.npz'), allow_pickle=True)
     X = [utils.enhance_contrast(summary_imgs['X'][()][k], contrast) for k in channels]
-    height, width = X[0].shape[0], X[0].shape[0]
+    height, width = X[0].shape[0], X[0].shape[1]
 
     # compute borders
     borders = utils.get_targets(os.path.join(cfg.data_dir, 'caiman', 'labels', dataset), border_thickness=1)['borders']
