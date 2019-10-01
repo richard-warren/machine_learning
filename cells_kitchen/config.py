@@ -11,15 +11,15 @@ dice loss function
 
 # general
 data_dir = r'C:\Users\erica and rick\Desktop\cells_kitchen'
-use_neurofinder = False  # whether to use neurofinder data // if False, caiman dataset is used
-parallelize = True  # whether to use parallel processing when creating summary images
+parallelize = False  # whether to use parallel processing when creating summary images
 cores = 4  # how many CPU cores to use for parallel processes
 
 # prepare training data
-datasets = ['N.04.00.t', 'N.00.00', 'N.01.01', 'N.02.00', 'N.03.00.t', 'YST', 'K53', 'J115', 'J123']  # caiman
-# datasets = ['J115', 'J123']  # caiman
-# datasets = ['00.00', '00.01', '00.02', '00.03', '00.04', '00.05', '00.06', '00.07', '00.08', '00.09', '00.10', '00.11', '01.00', '01.01', '02.00', '02.01', '03.00', '04.00', '04.01']  # neurofinder
-border_thickness = 1  # (pixels) thickness of borders for border labels
+# datasets = ['N.00.00', 'N.01.01', 'N.02.00', 'N.03.00.t', 'N.04.00.t',
+#             'YST', 'K53', 'J115', 'J123',
+#             'nf.01.00', 'nf.02.01', 'nf.04.01']
+datasets = ['N.00.00', 'nf.01.00', 'nf.02.01', 'nf.04.01']
+border_thickness = 2  # (pixels) thickness of borders for border labels
 centroid_radius = 2  # radius of circles at center of neuron mask in target
-summary_frames = 1000  # number of frames per batch when computing summary images (1000)
+summary_frames = 500  # number of frames per batch when computing summary images (1000)
 max_batches = 1000  # max number of batches to use for computing summary images (1000)

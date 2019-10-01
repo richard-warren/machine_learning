@@ -8,28 +8,28 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 # settings
-dataset = 'J115'
+# datasets = ['N.04.00.t', 'N.00.00', 'N.01.01', 'N.02.00', 'N.03.00.t', 'YST', 'K53', 'J115', 'J123']
+dataset = 'N.00.00'
 channels = ['corr', 'median']
 contrast = [1, 99.9]
 crop = 100
 scaling = 4
-fig1_size = 5
+fig1_size = 6
 fig2_size = 3
 
 
 # load summary images
-summary_imgs = np.load(os.path.join(cfg.data_dir, 'training_data', 'caiman', dataset + '.npz'), allow_pickle=True)
+summary_imgs = np.load(os.path.join(cfg.data_dir, 'training_data', dataset + '.npz'), allow_pickle=True)
 X = [utils.enhance_contrast(summary_imgs['X'][()][k], contrast) for k in channels]
 height, width = X[0].shape[0], X[0].shape[1]
 
 # compute borders
-borders = utils.get_targets(os.path.join(cfg.data_dir, 'caiman', 'labels', dataset), border_thickness=1)['borders']
+borders = utils.get_targets(os.path.join(cfg.data_dir, 'labels', dataset), border_thickness=1)['borders']
 cell_num = borders.shape[0]
-##
 cell = 0
 
 # create or load previous data
-file = os.path.join(cfg.data_dir, 'caiman', 'labels', dataset, 'cells_to_include.csv')
+file = os.path.join(cfg.data_dir, 'labels', dataset, 'cells_to_include.csv')
 if os.path.exists(file):
     # load previous data
     data = pd.read_csv(file)
@@ -58,7 +58,7 @@ def keypress(event):
             cell -= 1
 
     elif event.key == 'enter':
-        data.include[cell] = 0 if data.include[cell] else 1
+        data.loc[cell, 'include'] = 0 if data.loc[cell, 'include'] else 1
         data.to_csv(file, index=False)
 
     elif event.key == 'escape':
@@ -85,6 +85,7 @@ fig2.canvas.mpl_connect('key_press_event', keypress)
 
 def show_cell():
 
+    print('showing cell %i/%i' % (cell, cell_num))
     color = [0, 1, 0] if data.include[cell] else [1, 0, 0]
 
     # find crop position
@@ -104,8 +105,6 @@ def show_cell():
     mask[ylims, xlims] = 1
     im1.set_data(utils.add_contours(X[0], borders[cell], color=color) * mask)
     fig1.canvas.draw()
-
-    print('showing cell %i' % cell)
 
 
 show_cell()

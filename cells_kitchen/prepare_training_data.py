@@ -21,14 +21,12 @@ def get_batch(b, batch_inds, summary_frames, folder):  # # batch, batch_inds, su
 
     return X
 
+
 if __name__ == '__main__':
     for d in cfg.datasets:
 
         # get summary images
-        if cfg.use_neurofinder:
-            folder = os.path.join(cfg.data_dir, 'neurofinder', 'train', 'neurofinder.' + d, 'images')
-        else:
-            folder = os.path.join(cfg.data_dir, 'caiman', 'datasets', 'images_' + d)
+        folder = os.path.join(cfg.data_dir, 'datasets', 'images_' + d)
         total_frames = len(glob.glob(os.path.join(folder, '*.tif*')))
         summary_frames = min(cfg.summary_frames,
                              total_frames)  # make sure we don't look for more frames than exist in the dataset
@@ -46,7 +44,7 @@ if __name__ == '__main__':
             X_temp = pool.starmap(get_batch, args)
             X_temp = list(X_temp)
         else:
-            X_temp = [get_batch(b, batch_inds, summary_frames, folder) for b in range(batches)]
+            X_temp = [get_batch(b, batch_inds, summary_frames, folder) for b in tqdm(range(batches))]
         # print('%s: summary frames computed in %.1f minutes' % (d, (time.time() - start_time) / 60))
 
 
@@ -66,10 +64,7 @@ if __name__ == '__main__':
         X['std'] = utils.scale_img(np.max(X['std'], 0))
 
         # get targets
-        if cfg.use_neurofinder:
-            label_folder = os.path.join(cfg.data_dir, 'neurofinder', 'train', 'neurofinder.' + d)
-        else:
-            label_folder = os.path.join(cfg.data_dir, 'caiman', 'labels', d)
+        label_folder = os.path.join(cfg.data_dir, 'labels', d)
         y = utils.get_targets(label_folder, collapse_masks=True,
                               centroid_radius=cfg.centroid_radius, border_thickness=cfg.border_thickness)
 
@@ -78,8 +73,7 @@ if __name__ == '__main__':
         neuron_masks = neuron_masks['somas']  # keep only the soma masks
 
         # store data for model training
-        subfolder = 'neurofinder' if cfg.use_neurofinder else 'caiman'
-        training_data_folder = os.path.join(cfg.data_dir, 'training_data', subfolder)
+        training_data_folder = os.path.join(cfg.data_dir, 'training_data')
         if not os.path.exists(training_data_folder):
             os.makedirs(training_data_folder)
         np.savez(os.path.join(training_data_folder, d), X=X, y=y, neuron_masks=neuron_masks)

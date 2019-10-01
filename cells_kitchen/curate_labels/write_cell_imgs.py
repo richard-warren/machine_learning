@@ -9,7 +9,6 @@ import time
 
 # settings
 datasets = ['N.04.00.t', 'N.00.00', 'N.01.01', 'N.02.00', 'N.03.00.t', 'YST', 'K53', 'J115', 'J123']
-# datasets = ['YST', 'K53', 'J115', 'J123']  # caiman
 channels = ['corr', 'median']
 contrast = [1, 99.9]
 crop = 100
