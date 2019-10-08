@@ -94,7 +94,7 @@ def scale_img(img):
     return img_scaled
 
 
-def get_targets(folder, collapse_masks=False, centroid_radius=2, border_thickness=2):
+def get_targets(folder, collapse_masks=False, centroid_radius=2, border_thickness=2, use_curated_labels=False):
     """
     for folder containing labeled data, returns masks for soma, border of cells, and centroid. returned as 3D bool
     stacks, with one mask per cell, unless collapse_masks is True, in which case max is taken across all cells
@@ -105,7 +105,11 @@ def get_targets(folder, collapse_masks=False, centroid_radius=2, border_thicknes
         dimensions = json.load(f)['dimensions'][1:3]
 
     # load labels
-    file = os.path.join('regions', 'consensus_regions.json')
+    if use_curated_labels and os.path.exists(os.path.join(folder, 'regions', 'consensus_regions_curated.json')):
+        print('using curated labels for %s...' % folder)
+        file = os.path.join('regions', 'consensus_regions_curated.json')
+    else:
+        file = os.path.join('regions', 'consensus_regions.json')
     with open(os.path.join(folder, file)) as f:
         cell_masks = [np.array(x['coordinates']) for x in json.load(f)]
 
@@ -137,7 +141,11 @@ def get_targets(folder, collapse_masks=False, centroid_radius=2, border_thicknes
 def add_contours(img, contour, color=(1, 0, 0)):
     """given 2D img, and 2D contours, returns 3D image with contours added in color"""
 
-    img_contour = np.repeat(img[:,:,np.newaxis], 3, axis=2)
+    img_contour = img.copy()
+
+    if len(img_contour.shape)==2:
+        img_contour = np.repeat(img_contour[:, :, np.newaxis], 3, axis=2)
+
     inds = np.argwhere(contour)
     img_contour[inds[:, 0], inds[:, 1], :] = np.array(color)
 
@@ -225,8 +233,8 @@ def write_sample_border_imgs(channels=['corr'], height=800, contrast=(0,100)):
         X = dict((k, X[k]) for k in channels)  # restrict to requested channels
         X = np.stack(X.values(), axis=2)
 
-        y = get_targets(
-            os.path.join(cfg.data_dir, 'labels', dataset), border_thickness=1, collapse_masks=True)['borders']
+        y = get_targets(os.path.join(cfg.data_dir, 'labels', dataset),
+                        border_thickness=1, collapse_masks=True, use_curated_labels=cfg.use_curated_labels)['borders']
 
         # add borders
         img = np.zeros((y.shape[0], y.shape[1]*len(channels), 3))

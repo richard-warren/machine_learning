@@ -1,8 +1,8 @@
 ## write sample training images
 
-# import utils
-write_sample_imgs(X_contrast=(0,99))
-write_sample_border_imgs(channels=['corr', 'median', 'mean'], contrast=(0,99))
+import utils
+utils.write_sample_imgs(X_contrast=(0,99))
+utils.write_sample_border_imgs(channels=['corr', 'median'], contrast=(1, 99))
 # write_sample_border_imgs(channels=['corr'], contrast=(0,99))
 
 ## try auto-correlation images

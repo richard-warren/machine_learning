@@ -65,11 +65,11 @@ if __name__ == '__main__':
 
         # get targets
         label_folder = os.path.join(cfg.data_dir, 'labels', d)
-        y = utils.get_targets(label_folder, collapse_masks=True,
+        y = utils.get_targets(label_folder, collapse_masks=True, use_curated_labels=cfg.use_curated_labels,
                               centroid_radius=cfg.centroid_radius, border_thickness=cfg.border_thickness)
 
         # get tensor of masks for each individual neuron (used by segmentation network only)
-        neuron_masks = utils.get_targets(label_folder, collapse_masks=False)
+        neuron_masks = utils.get_targets(label_folder, collapse_masks=False, use_curated_labels=cfg.use_curated_labels)
         neuron_masks = neuron_masks['somas']  # keep only the soma masks
 
         # store data for model training

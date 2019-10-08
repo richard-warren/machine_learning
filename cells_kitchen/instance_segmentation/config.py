@@ -1,11 +1,12 @@
 # network
 X_layers = ['corr', 'median', 'std']  # summary images to include as input to the network // ['corr', 'mean', 'median', 'max', 'std']
-subframe_size = (48, 48)  # cubed root needs to be whole number // 40, 48, 60
+subframe_size = (48, 48)  # 40, 48, 64
 filters = 8  # try 8, 16, 32
 
 # training
-test_datasets = ['N.00.00', 'N.01.01', 'N.02.00', 'N.03.00.t', 'N.04.00.t', 'YST', 'K53', 'J115', 'J123']
-train_datasets = test_datasets
+# datasets = ['N.00.00', 'N.01.01', 'N.02.00', 'N.03.00.t', 'N.04.00.t', 'YST', 'K53', 'J115', 'J123', 'nf.01.00', 'nf.02.01', 'nf.04.01']
+test_datasets = ['N.01.01', 'N.02.00', 'N.03.00.t', 'N.04.00.t', 'K53', 'J115', 'J123', 'nf.01.00', 'nf.02.01']
+train_datasets = ['N.00.00', 'YST', 'nf.04.01']
 
 mask_weight = .5  # how much to weight mask vs classification loss during training
 fraction_positive_egs = .5  # fraction of training examples with an object in the center
