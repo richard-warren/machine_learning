@@ -27,30 +27,41 @@ def get_frames(folder, frame_inds=0, frame_num=False):
     return imgs
 
 
-def preview_vid(folder, frames_to_show=100, fps=30, close_when_done=False):
-    """
-    opens window and plays movie from sequence of .tif files
-    shows the first frames_to_show frames contained in folder
-    todo: auto contrast adjustment
-    """
+def get_subimg(img, position, padding='mean'):
+    '''
+    given an image and sub image position (row, col, height, width), where row and col are positions of top left corner,
+    returns a cropped subframe // allows subframes to be requested that are out of the bounds of the image,
+    and it pads the image to compensate, either with zeros (padding='zeros'), or with the mean of the
+    image (padding='mean')
+    '''
 
-    # initialize window
-    im_plot = plt.imshow(np.zeros((1, 1), dtype='float32'), cmap='Greys', vmin=0, vmax=1)
-    plt.show()
-    files = glob.glob(os.path.join(folder, '*.tif*'))
-    frames_to_show = min(frames_to_show, len(files))
+    row, col, hgt, wid = position[0], position[1], position[2], position[3]
 
-    # get range
-    imgs = tifffile.imread(np.array(files)[1:100].tolist()).astype('float32')
+    # if subframe fits within frame
+    if row>=0 and col>=0 and (row+hgt)<img.shape[0] and (col+wid)<img.shape[1]:
+        subimg = img[row:row+hgt, col:col+wid]
+        is_padded = False
 
-    for f in tqdm(files[0:frames_to_show]):
-        frame = tifffile.imread(f).astype('float32')
-        frame = frame / np.max(frame)
-        im_plot.set_data(frame)
-        plt.pause(1/fps)
+        return subimg
 
-    if close_when_done:
-        plt.close('all')
+    # if subframe contains ANY of the frame
+    elif row>(-hgt) and col>(-wid) and row<img.shape[0] and col<img.shape[1]:
+        if padding == 'zeros':
+            value = 0
+        elif padding == 'mean':
+            value = img.mean()
+
+        img_expanded = np.ones((img.shape[0]+2*hgt, img.shape[1]+2*wid), dtype=img.dtype) * value
+        img_expanded[hgt:hgt+img.shape[0], wid:wid+img.shape[1]] = img
+        subimg = img_expanded[row+hgt:row+2*hgt, col+wid:col+2*wid]
+        is_padded = True
+
+        return subimg
+
+    # otherwise return error
+    else:
+        print('WARNING: Requested sub image is completely outside of image dimensions')
+        return -1
 
 
 def get_correlation_image(imgs):

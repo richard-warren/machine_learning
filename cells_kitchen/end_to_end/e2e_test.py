@@ -1,8 +1,11 @@
-import numpy as np
-from keras.models import load_model
-from skimage.feature import peak_local_max
+
 from cells_kitchen.region_proposal.config import X_layers as rp_channels
 from cells_kitchen.instance_segmentation.config import X_layers as is_channels
+from cells_kitchen import utils
+import numpy as np
+from keras.models import load_model
+import skimage.measure
+import skimage.feature
 import matplotlib.pyplot as plt
 
 
@@ -20,15 +23,28 @@ model_is = load_model(rp_model_name)
 # get region proposals
 rp = model_rp.predict(np.expand_dims(data_rp, 0)).squeeze()
 
-## get local maxima
-maxima = peak_local_max(rp, min_distance=2, threshold_abs=.2)
+# get local maxima
+maxima = skimage.feature.peak_local_max(rp, min_distance=2, threshold_abs=.2, indices=False)
+labels = skimage.measure.label(maxima, 8)
+regions = skimage.measure.regionprops(labels)
+centroids = np.array([r.centroid for r in regions])
 
-# find centroid for each maximum
-
-
-# show image
+## show image
 # plt.close('all')
 # fig, ax = plt.subplots(1, 1)
 ax.clear()
-ax.imshow(rp)
-ax.plot(maxima[:,1], maxima[:,0], 'r.')
+# ax.imshow(rp)
+# ax.plot(centroids[:, 1], centroids[:, 0], 'r.')
+subframe = get_subimg(rp, (-50, -200, 1000, 2000), padding='zeros')
+ax.imshow(subframe)
+
+## perform instance segmentation at each maximum
+
+
+
+
+
+
+
+
+
