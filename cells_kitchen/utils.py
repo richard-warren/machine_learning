@@ -41,7 +41,7 @@ def get_subimg(img_in, position, padding='mean'):
     # if subframe fits within frame
     if row>=0 and col>=0 and (row+hgt)<img.shape[0] and (col+wid)<img.shape[1]:
         subimg = img[row:row+hgt, col:col+wid]
-        return subimg
+        return subimg.squeeze()
 
     # if subframe contains ANY of the frame
     elif row>(-hgt) and col>(-wid) and row<img.shape[0] and col<img.shape[1]:
@@ -66,7 +66,7 @@ def get_subimg(img_in, position, padding='mean'):
         img_expanded[hgt:hgt+img.shape[0], wid:wid+img.shape[1]] = img
         subimg = img_expanded[row+hgt:row+2*hgt, col+wid:col+2*wid]
 
-        return subimg
+        return subimg.squeeze()
 
     # if frame is not contained within requested subframe, return an error
     else:

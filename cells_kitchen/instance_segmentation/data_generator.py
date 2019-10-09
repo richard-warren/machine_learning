@@ -111,7 +111,7 @@ class DataGenerator(Sequence):
                 y = np.rot90(y, rotations, axes=(1, 2))
 
         y = np.expand_dims(y, -1)  # a temporary hack because keras expects multiple output channels
-        return X, [y, is_neuron], [is_neuron, np.ones(is_neuron.shape)]  # third output are sample weight // use is_neuron for sample wiehgts for mask, bc we ignore negative examples in the mask backprop
+        return X, [y, is_neuron], [is_neuron, np.ones(is_neuron.shape)]  # third output are sample weights // use is_neuron for sample wiehgts for mask, bc we ignore negative examples in the mask backprop
 
     def __len__(self):
         return self.epoch_size

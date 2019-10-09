@@ -10,7 +10,7 @@ train_datasets = ['N.00.00', 'YST', 'nf.04.01']
 
 mask_weight = .5  # how much to weight mask vs classification loss during training
 fraction_positive_egs = .5  # fraction of training examples with an object in the center
-jitter = 2  # object can be jittered +-jitter relative to center
+jitter = 1  # object can be jittered +-jitter relative to center
 negative_eg_distance = 8  # negative examples must have center at last this far from closest cell center
 
 lr_init = .001
