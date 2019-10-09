@@ -70,49 +70,38 @@ class DataGenerator(Sequence):
 
             # get subframe scaling
             if self.scaling:
-                scale = np.random.uniform(2 - self.scaling[1], 2 - self.scaling[
-                    0])  # the 2 minus is bc taking a BIGGER subframe results in a SMALLER resized subframe
+                scale = np.random.uniform(2 - self.scaling[1], 2 - self.scaling[0])  # the 2 minus is bc taking a BIGGER subframe results in a SMALLER resized subframe
             else:
                 scale = 1
             dx = np.floor(self.subframe_size[1] * scale / 2).astype('uint8')  # dx and xy are half the width of subframe
             dy = np.floor(self.subframe_size[0] * scale / 2).astype('uint8')
 
-            # todo: better way of finding subframe within borders...
-            found_subframe = False
-            while not found_subframe:
 
-                # pick subframe center
-                if is_neuron[i]:
-                    neuron_ind = np.random.randint(self.data.y[dataset_ind].shape[0])
-                    center = np.round(center_of_mass(self.data.y[dataset_ind][neuron_ind])).astype('int')
-                    jitter = np.random.randint(-self.jitter, self.jitter+1, size=2)
-                    center = center + jitter
-                else:
-                    ind = np.random.randint(self.data.negative_eg_inds[dataset_ind].shape[0])
-                    center = self.data.negative_eg_inds[dataset_ind][ind]
+            # pick subframe center
+            if is_neuron[i]:
+                neuron_ind = np.random.randint(self.data.y[dataset_ind].shape[0])
+                center = np.round(center_of_mass(self.data.y[dataset_ind][neuron_ind])).astype('int')
+                jitter = np.random.randint(-self.jitter, self.jitter+1, size=2)
+                center = center + jitter
+            else:
+                ind = np.random.randint(self.data.negative_eg_inds[dataset_ind].shape[0])
+                center = self.data.negative_eg_inds[dataset_ind][ind]
 
-                # extract subframe
-                try:
-                    x_inds = slice(center[1]-dx, center[1]+dx)
-                    y_inds = slice(center[0]-dy, center[0]+dy)
+            # get subframe
+            position = (center[0]-dy, center[1]-dx, self.subframe_size[0], self.subframe_size[1])
+            X_temp = utils.get_subimg(self.data.X[dataset_ind], position, padding='median_local')
 
-                    X_temp = self.data.X[dataset_ind][y_inds, x_inds]
+            if is_neuron[i]:
+                y_temp = utils.get_subimg(self.data.y[dataset_ind][neuron_ind], position, padding='median_local')
+            else:
+                y_temp = np.zeros(self.subframe_size)
 
-                    if is_neuron[i]:
-                        y_temp = self.data.y[dataset_ind][neuron_ind, y_inds, x_inds]
-                    else:
-                        y_temp = np.zeros(self.subframe_size)
-                    found_subframe = True
+            if self.scaling:
+                X_temp = cv2.resize(X_temp, self.subframe_size)
+                y_temp = cv2.resize(y_temp.astype('uint8'), self.subframe_size).astype('bool')
 
-                    if self.scaling:
-                        X_temp = cv2.resize(X_temp, self.subframe_size)
-                        y_temp = cv2.resize(y_temp.astype('uint8'), self.subframe_size).astype('bool')
-
-                    X[i] = X_temp
-                    y[i] = y_temp
-
-                except:
-                    pass
+            X[i] = X_temp
+            y[i] = y_temp
 
         # rotate
         if self.rotation:

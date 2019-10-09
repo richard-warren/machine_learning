@@ -27,7 +27,7 @@ def get_frames(folder, frame_inds=0, frame_num=False):
     return imgs
 
 
-def get_subimg(img, position, padding='mean'):
+def get_subimg(img_in, position, padding='mean'):
     '''
     given an image and sub image position (row, col, height, width), where row and col are positions of top left corner,
     returns a cropped subframe // allows subframes to be requested that are out of the bounds of the image,
@@ -36,29 +36,39 @@ def get_subimg(img, position, padding='mean'):
     '''
 
     row, col, hgt, wid = position[0], position[1], position[2], position[3]
+    img = np.expand_dims(img_in.copy(), 2) if len(img_in.shape)==2 else img_in.copy()  # add color dimension if necessary
 
     # if subframe fits within frame
     if row>=0 and col>=0 and (row+hgt)<img.shape[0] and (col+wid)<img.shape[1]:
         subimg = img[row:row+hgt, col:col+wid]
-        is_padded = False
-
         return subimg
 
     # if subframe contains ANY of the frame
     elif row>(-hgt) and col>(-wid) and row<img.shape[0] and col<img.shape[1]:
-        if padding == 'zeros':
-            value = 0
-        elif padding == 'mean':
-            value = img.mean()
 
-        img_expanded = np.ones((img.shape[0]+2*hgt, img.shape[1]+2*wid), dtype=img.dtype) * value
+        img_expanded = np.ones((img.shape[0]+2*hgt, img.shape[1]+2*wid, img.shape[2]), dtype=img.dtype)
+        if padding == 'zeros':
+            multiplier = 0
+        elif padding == 'mean':
+            multiplier = np.mean(img, axis=(0, 1))
+        elif padding == 'mean_local':
+            r, c = max(row, 0), max(col, 0)
+            img_local = img[r:min(r + hgt, img.shape[0]), c:min(c + wid, img.shape[1])]
+            multiplier = np.mean(img_local, axis=(0, 1))
+        elif padding == 'median':
+            multiplier = np.median(img, axis=(0, 1))
+        elif padding == 'median_local':
+            r, c = max(row, 0), max(col,0)
+            img_local = img[r:min(r+hgt, img.shape[0]), c:min(c+wid, img.shape[1])]
+            multiplier = np.median(img_local, axis=(0, 1))
+
+        img_expanded = img_expanded * multiplier
         img_expanded[hgt:hgt+img.shape[0], wid:wid+img.shape[1]] = img
         subimg = img_expanded[row+hgt:row+2*hgt, col+wid:col+2*wid]
-        is_padded = True
 
         return subimg
 
-    # otherwise return error
+    # if frame is not contained within requested subframe, return an error
     else:
         print('WARNING: Requested sub image is completely outside of image dimensions')
         return -1
