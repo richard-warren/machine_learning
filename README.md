@@ -1,2 +1,3 @@
 # machine_learning
-machine learning projects, just to play around with
+
+This repo contains pilots of various neural network based machine learning projects. 
